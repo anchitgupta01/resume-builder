@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 
-class AIAssistant {
+export class AIAssistant {
   private openai: OpenAI | null = null;
 
   constructor() {
