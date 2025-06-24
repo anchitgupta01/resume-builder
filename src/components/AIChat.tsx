@@ -13,7 +13,7 @@ export function AIChat({ resume }: AIChatProps) {
     {
       id: '1',
       type: 'assistant',
-      content: "Hi! I'm your AI resume assistant powered by OpenAI. I'm here to help you create a compelling, ATS-optimized resume. I can help you with writing better summaries, improving your experience descriptions, adding impactful achievements, and optimizing for keywords. What would you like to work on?",
+      content: "Hi! I'm your AI resume assistant powered by OpenAI. I'm here to help you create a compelling, ATS-optimized resume. I can help you with writing better summaries, improving your experience descriptions, adding impactful achievements, optimizing for keywords, and customizing template content. What would you like to work on?",
       timestamp: new Date()
     }
   ]);
@@ -84,7 +84,7 @@ export function AIChat({ resume }: AIChatProps) {
     "What projects should I add to my resume?",
     "Show me professional resume templates",
     "How do I quantify my achievements?",
-    "What skills are most important for my field?"
+    "Help me customize template content for my experience"
   ];
 
   const handleQuickQuestion = (question: string) => {
@@ -96,11 +96,20 @@ export function AIChat({ resume }: AIChatProps) {
       const templateMessage: ChatMessage = {
         id: Date.now().toString(),
         type: 'assistant',
-        content: `Here are our professional resume templates:\n\n${templateInfo}\n\nTo use a template, go to the Builder tab and click "Choose Professional Template". Each template is crafted by experts and optimized for ATS systems. Would you like specific advice about which template might work best for your career level and industry?`,
+        content: `Here are our professional resume templates:\n\n${templateInfo}\n\nTo use a template, go to the Builder tab and click "Choose Professional Template". Each template is crafted by experts and optimized for ATS systems. All template content is fully editable - you can customize every section with your own experience, skills, and achievements. Would you like specific advice about which template might work best for your career level and industry?`,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, templateMessage]);
+    } else if (question === "Help me customize template content for my experience") {
+      const customizationMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: `Great question! Here's how to effectively customize template content:\n\n**1. Replace Example Content:**\n• Substitute template job titles, companies, and dates with your actual experience\n• Update skills to match your expertise level and relevant technologies\n• Replace project examples with your own work\n\n**2. Adapt Achievement Statements:**\n• Keep the quantified format (numbers, percentages, dollar amounts)\n• Replace specific metrics with your own accomplishments\n• Maintain the action verb + result structure\n\n**3. Tailor Industry Language:**\n• Update technical terms to match your field\n• Include industry-specific keywords from job descriptions\n• Adjust the professional summary to reflect your career goals\n\n**4. Maintain Professional Structure:**\n• Keep the proven formatting and section organization\n• Preserve the ATS-friendly layout\n• Follow the same bullet point style for consistency\n\nWould you like help customizing any specific section of your template?`,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, customizationMessage]);
     } else {
       setInputMessage(question);
     }

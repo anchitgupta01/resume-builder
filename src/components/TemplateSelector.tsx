@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Search, Filter, Star, Users, Briefcase, Code, Heart, GraduationCap, Globe } from 'lucide-react';
+import { FileText, Search, Filter, Star, Users, Briefcase, Code, Heart, GraduationCap, Globe, Edit3 } from 'lucide-react';
 import { resumeTemplates, getTemplatesByCategory, getTemplatesByLevel } from '../data/resumeTemplates';
 import { ResumeTemplate, Resume } from '../types/resume';
 
@@ -42,8 +42,8 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
   });
 
   const handleSelectTemplate = (template: ResumeTemplate) => {
-    // Clear personal information for privacy
-    const cleanedTemplate = {
+    // Keep all template content but clear only personal contact info for privacy
+    const editableTemplate = {
       ...template.data,
       personalInfo: {
         ...template.data.personalInfo,
@@ -54,10 +54,11 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
         linkedin: '',
         github: '',
         website: ''
+        // Keep the professional summary as it's valuable content to edit
       }
     };
     
-    onSelectTemplate(cleanedTemplate);
+    onSelectTemplate(editableTemplate);
     onClose();
   };
 
@@ -88,7 +89,7 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Choose a Template</h2>
-                <p className="text-gray-600">Select a professional template to get started quickly</p>
+                <p className="text-gray-600">Select a professional template and customize all content to match your experience</p>
               </div>
             </div>
             <button
@@ -97,6 +98,20 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
             >
               ×
             </button>
+          </div>
+
+          {/* Important Notice */}
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-3">
+              <Edit3 className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-medium text-blue-900 mb-1">Fully Customizable Templates</h4>
+                <p className="text-sm text-blue-700">
+                  All template content is completely editable! Use the professional examples as a starting point, 
+                  then customize every section with your own experience, skills, and achievements.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Search and Filters */}
@@ -146,7 +161,7 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
         </div>
 
         {/* Templates Grid */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-280px)]">
           {filteredTemplates.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -161,7 +176,7 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
                 return (
                   <div
                     key={template.id}
-                    className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer group"
+                    className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group hover:border-blue-300"
                     onClick={() => handleSelectTemplate(template)}
                   >
                     {/* Template Header */}
@@ -179,18 +194,33 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
                           </span>
                         </div>
                       </div>
+                      <Edit3 className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
                     </div>
 
                     {/* Template Description */}
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    <p className="text-gray-600 text-sm mb-4">
                       {template.description}
                     </p>
 
                     {/* Template Preview */}
-                    <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                      <p className="text-xs text-gray-700 italic">
+                    <div className="bg-gray-50 rounded-lg p-3 mb-4 group-hover:bg-blue-50 transition-colors">
+                      <p className="text-xs text-gray-700 italic group-hover:text-blue-700">
                         "{template.preview}"
                       </p>
+                    </div>
+
+                    {/* Content Preview */}
+                    <div className="mb-4 text-xs text-gray-600">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Includes:</span>
+                        <span className="text-green-600 font-medium">✓ Fully Editable</span>
+                      </div>
+                      <ul className="space-y-1">
+                        <li>• {template.data.experience.length} work experience examples</li>
+                        <li>• {template.data.skills.length} relevant skills</li>
+                        <li>• {template.data.projects.length} project examples</li>
+                        <li>• Professional summary template</li>
+                      </ul>
                     </div>
 
                     {/* Tags */}
@@ -198,21 +228,22 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
                       {template.tags.slice(0, 3).map((tag, index) => (
                         <span
                           key={index}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full group-hover:bg-blue-200"
                         >
                           {tag}
                         </span>
                       ))}
                       {template.tags.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full group-hover:bg-gray-200">
                           +{template.tags.length - 3} more
                         </span>
                       )}
                     </div>
 
                     {/* Use Template Button */}
-                    <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors group-hover:bg-blue-700">
-                      Use This Template
+                    <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors group-hover:bg-blue-700 flex items-center justify-center space-x-2">
+                      <Edit3 className="h-4 w-4" />
+                      <span>Use & Customize</span>
                     </button>
                   </div>
                 );
@@ -227,9 +258,15 @@ export function TemplateSelector({ onSelectTemplate, onClose }: TemplateSelector
             <p className="text-sm text-gray-600">
               {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} available
             </p>
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
-              <Users className="h-4 w-4" />
-              <span>Professional templates crafted by experts</span>
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <div className="flex items-center space-x-1">
+                <Edit3 className="h-4 w-4" />
+                <span>100% Customizable</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Users className="h-4 w-4" />
+                <span>Expert Crafted</span>
+              </div>
             </div>
           </div>
         </div>
