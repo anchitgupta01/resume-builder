@@ -6,7 +6,7 @@ export class AIAssistant {
   
   async generateResponse(userMessage: string, resume: Resume): Promise<string> {
     try {
-      // Use OpenAI service for generating responses
+      // Use enhanced OpenAI service for generating responses
       const response = await openaiService.generateResumeAdvice(userMessage, resume);
       
       // Store in conversation history
@@ -27,7 +27,7 @@ export class AIAssistant {
       return response;
     } catch (error) {
       console.error('Error generating AI response:', error);
-      return "I apologize, but I'm having trouble processing your request right now. Please try again or ask me something else about your resume.";
+      return "I apologize, but I'm having trouble processing your request right now. Please try again or ask me something else about your resume. I'm here to help with writing summaries, optimizing for ATS, improving experience descriptions, and customizing template content.";
     }
   }
   
