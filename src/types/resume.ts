@@ -73,3 +73,14 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
 }
+
+export interface ResumeTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: 'technology' | 'business' | 'creative' | 'healthcare' | 'education' | 'general';
+  level: 'entry' | 'mid' | 'senior' | 'executive';
+  data: Resume;
+  tags: string[];
+  preview: string;
+}

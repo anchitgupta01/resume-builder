@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader, Key } from 'lucide-react';
+import { Send, Bot, User, Loader, Key, Sparkles } from 'lucide-react';
 import { ChatMessage, Resume } from '../types/resume';
 import { AIAssistant } from '../utils/aiAssistant';
+import { resumeTemplates } from '../data/resumeTemplates';
 
 interface AIChatProps {
   resume: Resume;
@@ -80,8 +81,30 @@ export function AIChat({ resume }: AIChatProps) {
     "Help me write better achievement statements",
     "What keywords should I include for ATS?",
     "How can I make my experience more impactful?",
-    "What projects should I add to my resume?"
+    "What projects should I add to my resume?",
+    "Show me professional resume templates",
+    "How do I quantify my achievements?",
+    "What skills are most important for my field?"
   ];
+
+  const handleQuickQuestion = (question: string) => {
+    if (question === "Show me professional resume templates") {
+      const templateInfo = resumeTemplates.map(t => 
+        `• ${t.name} (${t.level} level) - ${t.description}`
+      ).join('\n');
+      
+      const templateMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: `Here are our professional resume templates:\n\n${templateInfo}\n\nTo use a template, go to the Builder tab and click "Choose Professional Template". Each template is crafted by experts and optimized for ATS systems. Would you like specific advice about which template might work best for your career level and industry?`,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, templateMessage]);
+    } else {
+      setInputMessage(question);
+    }
+  };
 
   const hasApiKey = !!import.meta.env.VITE_OPENAI_API_KEY;
 
@@ -211,12 +234,15 @@ export function AIChat({ resume }: AIChatProps) {
         {/* Quick Questions */}
         {messages.length === 1 && (
           <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex-shrink-0">
-            <p className="text-sm font-medium text-gray-700 mb-3">Quick questions to get started:</p>
+            <div className="flex items-center space-x-2 mb-3">
+              <Sparkles className="h-4 w-4 text-purple-600" />
+              <p className="text-sm font-medium text-gray-700">Quick questions to get started:</p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {quickQuestions.map((question, index) => (
                 <button
                   key={index}
-                  onClick={() => setInputMessage(question)}
+                  onClick={() => handleQuickQuestion(question)}
                   className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-left"
                 >
                   {question}
