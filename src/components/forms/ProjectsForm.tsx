@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Code, Plus, Trash2, ExternalLink, Github } from 'lucide-react';
+import { Code, Plus, Trash2, ExternalLink, Github, Edit3, Save, X } from 'lucide-react';
 import { Project } from '../../types/resume';
 
 interface ProjectsFormProps {
@@ -8,6 +8,8 @@ interface ProjectsFormProps {
 }
 
 export function ProjectsForm({ projects, onChange }: ProjectsFormProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingData, setEditingData] = useState<Project | null>(null);
   const [newProject, setNewProject] = useState<Partial<Project>>({
     name: '',
     description: '',
@@ -16,6 +18,7 @@ export function ProjectsForm({ projects, onChange }: ProjectsFormProps) {
     github: ''
   });
   const [techInput, setTechInput] = useState('');
+  const [editTechInput, setEditTechInput] = useState('');
 
   const addProject = () => {
     if (newProject.name && newProject.description) {
@@ -43,27 +46,65 @@ export function ProjectsForm({ projects, onChange }: ProjectsFormProps) {
     onChange(projects.filter(project => project.id !== id));
   };
 
-  const addTechnology = () => {
-    if (techInput.trim() && !newProject.technologies?.includes(techInput.trim())) {
-      setNewProject(prev => ({
-        ...prev,
-        technologies: [...(prev.technologies || []), techInput.trim()]
-      }));
-      setTechInput('');
+  const startEditing = (project: Project) => {
+    setEditingId(project.id);
+    setEditingData({ ...project });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingData(null);
+    setEditTechInput('');
+  };
+
+  const saveEditing = () => {
+    if (editingData) {
+      onChange(projects.map(proj => proj.id === editingId ? editingData : proj));
+      setEditingId(null);
+      setEditingData(null);
+      setEditTechInput('');
     }
   };
 
-  const removeTechnology = (tech: string) => {
-    setNewProject(prev => ({
-      ...prev,
-      technologies: (prev.technologies || []).filter(t => t !== tech)
-    }));
+  const updateEditingData = (field: keyof Project, value: any) => {
+    if (editingData) {
+      setEditingData({ ...editingData, [field]: value });
+    }
   };
 
-  const handleTechKeyPress = (e: React.KeyboardEvent) => {
+  const addTechnology = (isEditing = false) => {
+    const input = isEditing ? editTechInput : techInput;
+    const currentTechnologies = isEditing ? editingData?.technologies || [] : newProject.technologies || [];
+    
+    if (input.trim() && !currentTechnologies.includes(input.trim())) {
+      if (isEditing && editingData) {
+        updateEditingData('technologies', [...currentTechnologies, input.trim()]);
+        setEditTechInput('');
+      } else {
+        setNewProject(prev => ({
+          ...prev,
+          technologies: [...currentTechnologies, input.trim()]
+        }));
+        setTechInput('');
+      }
+    }
+  };
+
+  const removeTechnology = (tech: string, isEditing = false) => {
+    if (isEditing && editingData) {
+      updateEditingData('technologies', editingData.technologies.filter(t => t !== tech));
+    } else {
+      setNewProject(prev => ({
+        ...prev,
+        technologies: (prev.technologies || []).filter(t => t !== tech)
+      }));
+    }
+  };
+
+  const handleTechKeyPress = (e: React.KeyboardEvent, isEditing = false) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      addTechnology();
+      addTechnology(isEditing);
     }
   };
 
@@ -80,52 +121,172 @@ export function ProjectsForm({ projects, onChange }: ProjectsFormProps) {
       <div className="space-y-4 mb-6">
         {projects.map((project) => (
           <div key={project.id} className="border border-gray-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <h4 className="font-semibold text-gray-900">{project.name}</h4>
-                  {project.link && (
-                    <a
-                      href={project.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800"
+            {editingId === project.id && editingData ? (
+              // Edit Mode
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="font-semibold text-gray-900">Edit Project</h4>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={saveEditing}
+                      className="text-green-600 hover:text-green-800 p-1"
+                      title="Save changes"
                     >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  )}
-                  {project.github && (
-                    <a
-                      href={project.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gray-600 hover:text-gray-800"
+                      <Save className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      className="text-gray-600 hover:text-gray-800 p-1"
+                      title="Cancel editing"
                     >
-                      <Github className="h-4 w-4" />
-                    </a>
-                  )}
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-gray-600 mb-3">{project.description}</p>
-                {project.technologies.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {project.technologies.map((tech, index) => (
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                  <input
+                    type="text"
+                    value={editingData.name}
+                    onChange={(e) => updateEditingData('name', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={editingData.description}
+                    onChange={(e) => updateEditingData('description', e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <ExternalLink className="h-4 w-4 inline mr-1" />
+                      Live Demo URL
+                    </label>
+                    <input
+                      type="url"
+                      value={editingData.link}
+                      onChange={(e) => updateEditingData('link', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Github className="h-4 w-4 inline mr-1" />
+                      GitHub Repository
+                    </label>
+                    <input
+                      type="url"
+                      value={editingData.github}
+                      onChange={(e) => updateEditingData('github', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Technologies Used</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {editingData.technologies.map((tech) => (
                       <span
-                        key={index}
-                        className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                        key={tech}
+                        className="flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
                       >
                         {tech}
+                        <button
+                          onClick={() => removeTechnology(tech, true)}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </span>
                     ))}
                   </div>
-                )}
+                  <div className="flex">
+                    <input
+                      type="text"
+                      value={editTechInput}
+                      onChange={(e) => setEditTechInput(e.target.value)}
+                      onKeyPress={(e) => handleTechKeyPress(e, true)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="React, Node.js, Python, etc."
+                    />
+                    <button
+                      onClick={() => addTechnology(true)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={() => removeProject(project.id)}
-                className="text-red-600 hover:text-red-800 ml-4"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
+            ) : (
+              // View Mode
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="font-semibold text-gray-900">{project.name}</h4>
+                    {project.link && (
+                      <a
+                        href={project.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
+                    {project.github && (
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-600 hover:text-gray-800"
+                      >
+                        <Github className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-gray-600 mb-3">{project.description}</p>
+                  {project.technologies.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {project.technologies.map((tech, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex space-x-2 ml-4">
+                  <button
+                    onClick={() => startEditing(project)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="Edit project"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => removeProject(project.id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Delete project"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -221,7 +382,7 @@ export function ProjectsForm({ projects, onChange }: ProjectsFormProps) {
                 placeholder="React, Node.js, Python, etc."
               />
               <button
-                onClick={addTechnology}
+                onClick={() => addTechnology()}
                 className="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors"
               >
                 <Plus className="h-4 w-4" />
