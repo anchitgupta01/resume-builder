@@ -25,16 +25,16 @@ function App() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
       
-      <main className="py-8">
+      <main className="flex-1 py-4 sm:py-6 lg:py-8">
         {activeTab === 'builder' && (
           <ResumeBuilder resume={resume} onResumeChange={setResume} />
         )}
         
         {activeTab === 'chat' && (
-          <div className="max-w-4xl mx-auto p-6">
+          <div className="h-full">
             <AIChat resume={resume} />
           </div>
         )}

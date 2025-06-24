@@ -86,23 +86,25 @@ export function AIChat({ resume }: AIChatProps) {
   const hasApiKey = !!import.meta.env.VITE_OPENAI_API_KEY;
 
   return (
-    <div className="max-w-4xl mx-auto h-full flex flex-col">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col">
+    <div className="max-w-4xl mx-auto h-full flex flex-col p-4 sm:p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-lg">
-                <Bot className="h-6 w-6 text-white" />
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-lg flex-shrink-0">
+                <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">AI Resume Assistant</h2>
-                <p className="text-gray-600">Get personalized advice powered by OpenAI</p>
+              <div className="min-w-0">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  AI Resume Assistant
+                </h2>
+                <p className="text-gray-600 text-sm">Get personalized advice powered by OpenAI</p>
               </div>
             </div>
             
             {!hasApiKey && (
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                 <div className="flex items-center space-x-1 text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-sm">
                   <Key className="h-4 w-4" />
                   <span>API Key Required</span>
@@ -124,27 +126,35 @@ export function AIChat({ resume }: AIChatProps) {
               <p className="text-sm text-blue-700 mb-3">
                 To enable AI-powered features, add your OpenAI API key to your environment variables:
               </p>
-              <div className="bg-blue-100 p-3 rounded font-mono text-sm text-blue-800">
+              <div className="bg-blue-100 p-3 rounded font-mono text-sm text-blue-800 break-all">
                 VITE_OPENAI_API_KEY=your_api_key_here
               </div>
               <p className="text-xs text-blue-600 mt-2">
-                Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI Platform</a>
+                Get your API key from{' '}
+                <a 
+                  href="https://platform.openai.com/api-keys" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="underline"
+                >
+                  OpenAI Platform
+                </a>
               </p>
             </div>
           )}
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-0">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-3xl flex ${
+                className={`max-w-[85%] sm:max-w-3xl flex ${
                   message.type === 'user' ? 'flex-row-reverse' : 'flex-row'
-                } space-x-3`}
+                } space-x-2 sm:space-x-3`}
               >
                 <div
                   className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
@@ -160,15 +170,15 @@ export function AIChat({ resume }: AIChatProps) {
                   )}
                 </div>
                 <div
-                  className={`px-4 py-3 rounded-lg ${
+                  className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${
                     message.type === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <p className="whitespace-pre-wrap text-sm sm:text-base">{message.content}</p>
                   <p
-                    className={`text-xs mt-2 ${
+                    className={`text-xs mt-1 sm:mt-2 ${
                       message.type === 'user' ? 'text-blue-200' : 'text-gray-500'
                     }`}
                   >
@@ -181,14 +191,14 @@ export function AIChat({ resume }: AIChatProps) {
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className="max-w-3xl flex space-x-3">
+              <div className="max-w-[85%] sm:max-w-3xl flex space-x-2 sm:space-x-3">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white flex items-center justify-center">
                   <Bot className="h-4 w-4" />
                 </div>
-                <div className="px-4 py-3 rounded-lg bg-gray-100">
+                <div className="px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-gray-100">
                   <div className="flex items-center space-x-2">
                     <Loader className="h-4 w-4 animate-spin" />
-                    <span className="text-gray-600">AI is analyzing and responding...</span>
+                    <span className="text-gray-600 text-sm sm:text-base">AI is analyzing and responding...</span>
                   </div>
                 </div>
               </div>
@@ -200,9 +210,9 @@ export function AIChat({ resume }: AIChatProps) {
 
         {/* Quick Questions */}
         {messages.length === 1 && (
-          <div className="px-6 py-4 border-t border-gray-200">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex-shrink-0">
             <p className="text-sm font-medium text-gray-700 mb-3">Quick questions to get started:</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {quickQuestions.map((question, index) => (
                 <button
                   key={index}
@@ -217,23 +227,24 @@ export function AIChat({ resume }: AIChatProps) {
         )}
 
         {/* Input */}
-        <div className="p-6 border-t border-gray-200">
-          <div className="flex space-x-3">
+        <div className="p-4 sm:p-6 border-t border-gray-200 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
             <textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={hasApiKey ? "Ask me anything about your resume..." : "Configure OpenAI API key to enable AI features..."}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
               rows={2}
               disabled={isLoading}
             />
             <button
               onClick={sendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start"
             >
               <Send className="h-4 w-4" />
+              <span className="ml-2 sm:hidden">Send</span>
             </button>
           </div>
           

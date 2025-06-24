@@ -75,20 +75,20 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center space-x-3 mb-6">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="flex items-center space-x-3 mb-4 sm:mb-6">
         <div className="bg-green-100 p-2 rounded-lg">
           <Briefcase className="h-5 w-5 text-green-600" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900">Work Experience</h3>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Work Experience</h3>
       </div>
 
       {/* Existing Experience */}
       <div className="space-y-4 mb-6">
         {experience.map((exp) => (
           <div key={exp.id} className="border border-gray-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-3">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3">
+              <div className="mb-2 sm:mb-0">
                 <h4 className="font-semibold text-gray-900">{exp.position}</h4>
                 <p className="text-gray-600">{exp.company}</p>
                 <p className="text-sm text-gray-500">
@@ -98,13 +98,13 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
               <div className="flex space-x-2">
                 <button
                   onClick={() => setEditingId(editingId === exp.id ? null : exp.id)}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="text-blue-600 hover:text-blue-800 p-1"
                 >
                   <Edit3 className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => removeExperience(exp.id)}
-                  className="text-red-600 hover:text-red-800"
+                  className="text-red-600 hover:text-red-800 p-1"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -137,10 +137,10 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
       </div>
 
       {/* Add New Experience */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6">
         <h4 className="font-medium text-gray-900 mb-4">Add New Experience</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Company *
@@ -149,7 +149,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
               type="text"
               value={newExperience.company || ''}
               onChange={(e) => setNewExperience(prev => ({ ...prev, company: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               placeholder="Company Name"
             />
           </div>
@@ -162,7 +162,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
               type="text"
               value={newExperience.position || ''}
               onChange={(e) => setNewExperience(prev => ({ ...prev, position: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               placeholder="Job Title"
             />
           </div>
@@ -175,7 +175,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
               type="month"
               value={newExperience.startDate || ''}
               onChange={(e) => setNewExperience(prev => ({ ...prev, startDate: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             />
           </div>
           
@@ -189,7 +189,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                 value={newExperience.endDate || ''}
                 onChange={(e) => setNewExperience(prev => ({ ...prev, endDate: e.target.value }))}
                 disabled={newExperience.current}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
               />
               <label className="flex items-center">
                 <input
@@ -215,12 +215,12 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                 type="text"
                 value={desc}
                 onChange={(e) => updateDescriptionItem('description', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Describe your responsibilities..."
               />
               <button
                 onClick={() => removeDescriptionItem('description', index)}
-                className="ml-2 text-red-600 hover:text-red-800"
+                className="ml-2 text-red-600 hover:text-red-800 p-2"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -246,12 +246,12 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                 type="text"
                 value={achievement}
                 onChange={(e) => updateDescriptionItem('achievements', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Quantify your achievements with numbers..."
               />
               <button
                 onClick={() => removeDescriptionItem('achievements', index)}
-                className="ml-2 text-red-600 hover:text-red-800"
+                className="ml-2 text-red-600 hover:text-red-800 p-2"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -268,7 +268,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
 
         <button
           onClick={addExperience}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+          className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Experience

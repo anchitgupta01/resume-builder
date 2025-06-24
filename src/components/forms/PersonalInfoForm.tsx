@@ -13,16 +13,16 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center space-x-3 mb-6">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="flex items-center space-x-3 mb-4 sm:mb-6">
         <div className="bg-blue-100 p-2 rounded-lg">
           <User className="h-5 w-5 text-blue-600" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900">Personal Information</h3>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Personal Information</h3>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="sm:col-span-2 sm:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Full Name *
           </label>
@@ -30,7 +30,7 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
             type="text"
             value={personalInfo.fullName}
             onChange={(e) => handleChange('fullName', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="John Doe"
           />
         </div>
@@ -44,7 +44,7 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
             type="email"
             value={personalInfo.email}
             onChange={(e) => handleChange('email', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="john@example.com"
           />
         </div>
@@ -58,7 +58,7 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
             type="tel"
             value={personalInfo.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="+1 (555) 123-4567"
           />
         </div>
@@ -72,7 +72,7 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
             type="text"
             value={personalInfo.location}
             onChange={(e) => handleChange('location', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="New York, NY"
           />
         </div>
@@ -86,7 +86,7 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
             type="url"
             value={personalInfo.linkedin || ''}
             onChange={(e) => handleChange('linkedin', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="https://linkedin.com/in/johndoe"
           />
         </div>
@@ -100,12 +100,12 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
             type="url"
             value={personalInfo.github || ''}
             onChange={(e) => handleChange('github', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="https://github.com/johndoe"
           />
         </div>
         
-        <div className="md:col-span-2">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <Globe className="h-4 w-4 inline mr-1" />
             Website/Portfolio
@@ -114,12 +114,12 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
             type="url"
             value={personalInfo.website || ''}
             onChange={(e) => handleChange('website', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="https://johndoe.com"
           />
         </div>
         
-        <div className="md:col-span-2">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Professional Summary *
           </label>
@@ -127,7 +127,7 @@ export function PersonalInfoForm({ personalInfo, onChange }: PersonalInfoFormPro
             value={personalInfo.summary}
             onChange={(e) => handleChange('summary', e.target.value)}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="A brief 2-3 sentence summary highlighting your key strengths, experience, and career objectives..."
           />
           <p className="text-sm text-gray-500 mt-1">
