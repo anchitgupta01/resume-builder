@@ -1,4 +1,5 @@
 import { Resume, ATSScore } from '../types/resume';
+import { openaiService } from './openaiService';
 
 const commonATSKeywords = [
   'leadership', 'management', 'team', 'project', 'development', 'analysis',
@@ -14,7 +15,59 @@ const technicalKeywords = [
   'data analysis', 'artificial intelligence', 'cybersecurity', 'devops'
 ];
 
-export function analyzeATS(resume: Resume, jobDescription?: string): ATSScore {
+export async function analyzeATS(resume: Resume, jobDescription?: string): Promise<ATSScore> {
+  try {
+    // Try to use OpenAI for enhanced analysis
+    const aiAnalysis = await openaiService.analyzeATSScore(resume, jobDescription);
+    
+    // Convert AI analysis to our ATSScore format
+    const breakdown = calculateBreakdown(resume, aiAnalysis.keywords);
+    
+    return {
+      overall: aiAnalysis.score,
+      breakdown,
+      suggestions: aiAnalysis.suggestions,
+      missingKeywords: aiAnalysis.keywords.filter(keyword => 
+        !extractResumeText(resume).toLowerCase().includes(keyword.toLowerCase())
+      ).slice(0, 10)
+    };
+  } catch (error) {
+    console.error('Error in AI ATS analysis, falling back to basic analysis:', error);
+    return performBasicAnalysis(resume, jobDescription);
+  }
+}
+
+function calculateBreakdown(resume: Resume, aiKeywords: string[]): ATSScore['breakdown'] {
+  const resumeText = extractResumeText(resume).toLowerCase();
+  
+  // Keywords score based on AI-suggested keywords
+  const foundKeywords = aiKeywords.filter(keyword => 
+    resumeText.includes(keyword.toLowerCase())
+  );
+  const keywordScore = Math.min((foundKeywords.length / aiKeywords.length) * 100, 100);
+  
+  // Formatting score
+  const formattingScore = analyzeFormatting(resume);
+  
+  // Experience score
+  const experienceScore = analyzeExperience(resume);
+  
+  // Education score
+  const educationScore = analyzeEducation(resume);
+  
+  // Skills score
+  const skillsScore = analyzeSkills(resume);
+  
+  return {
+    keywords: Math.round(keywordScore),
+    formatting: Math.round(formattingScore),
+    experience: Math.round(experienceScore),
+    education: Math.round(educationScore),
+    skills: Math.round(skillsScore)
+  };
+}
+
+function performBasicAnalysis(resume: Resume, jobDescription?: string): ATSScore {
   const resumeText = extractResumeText(resume).toLowerCase();
   const jobKeywords = jobDescription ? extractJobKeywords(jobDescription) : [];
   
@@ -24,16 +77,10 @@ export function analyzeATS(resume: Resume, jobDescription?: string): ATSScore {
   
   const keywordScore = Math.min((foundKeywords.length / 20) * 100, 100);
   
-  // Formatting analysis
+  // Other scores
   const formattingScore = analyzeFormatting(resume);
-  
-  // Experience analysis
   const experienceScore = analyzeExperience(resume);
-  
-  // Education analysis
   const educationScore = analyzeEducation(resume);
-  
-  // Skills analysis
   const skillsScore = analyzeSkills(resume);
   
   const overall = Math.round(
@@ -45,7 +92,7 @@ export function analyzeATS(resume: Resume, jobDescription?: string): ATSScore {
     .filter(keyword => !resumeText.includes(keyword.toLowerCase()))
     .slice(0, 10);
   
-  const suggestions = generateSuggestions(resume, overall);
+  const suggestions = generateBasicSuggestions(resume, overall);
   
   return {
     overall,
@@ -161,7 +208,7 @@ function analyzeSkills(resume: Resume): number {
   return Math.min(score, 100);
 }
 
-function generateSuggestions(resume: Resume, overallScore: number): string[] {
+function generateBasicSuggestions(resume: Resume, overallScore: number): string[] {
   const suggestions: string[] = [];
   
   if (overallScore < 70) {

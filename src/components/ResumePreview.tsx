@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Download, FileText, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Download, FileText, TrendingUp, AlertCircle, Settings, Loader } from 'lucide-react';
 import { Resume, ATSScore } from '../types/resume';
 import { analyzeATS } from '../utils/atsAnalyzer';
 
@@ -9,7 +9,33 @@ interface ResumePreviewProps {
 
 export function ResumePreview({ resume }: ResumePreviewProps) {
   const resumeRef = useRef<HTMLDivElement>(null);
-  const atsScore = analyzeATS(resume);
+  const [atsScore, setAtsScore] = useState<ATSScore | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [jobDescription, setJobDescription] = useState('');
+  const [showJobDescInput, setShowJobDescInput] = useState(false);
+
+  useEffect(() => {
+    analyzeResume();
+  }, [resume]);
+
+  const analyzeResume = async () => {
+    setIsAnalyzing(true);
+    try {
+      const score = await analyzeATS(resume, jobDescription || undefined);
+      setAtsScore(score);
+    } catch (error) {
+      console.error('Error analyzing resume:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleJobDescriptionAnalysis = async () => {
+    if (jobDescription.trim()) {
+      await analyzeResume();
+      setShowJobDescInput(false);
+    }
+  };
 
   const downloadPDF = async () => {
     if (!resumeRef.current) return;
@@ -63,85 +89,164 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
     return 'bg-red-100';
   };
 
+  if (!atsScore && isAnalyzing) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <p className="text-gray-600">Analyzing your resume with AI...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* ATS Score Panel */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">ATS Score</h3>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">ATS Score</h3>
+              <button
+                onClick={() => setShowJobDescInput(!showJobDescInput)}
+                className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+                title="Analyze against job description"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Overall Score */}
-            <div className="text-center mb-6">
-              <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full ${getScoreBgColor(atsScore.overall)} mb-3`}>
-                <span className={`text-3xl font-bold ${getScoreColor(atsScore.overall)}`}>
-                  {atsScore.overall}
-                </span>
+            {/* Job Description Input */}
+            {showJobDescInput && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Job Description (Optional)
+                </label>
+                <textarea
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  placeholder="Paste the job description here for targeted analysis..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  rows={4}
+                />
+                <div className="flex space-x-2 mt-3">
+                  <button
+                    onClick={handleJobDescriptionAnalysis}
+                    disabled={isAnalyzing}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+                  </button>
+                  <button
+                    onClick={() => setShowJobDescInput(false)}
+                    className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <p className="text-gray-600">Overall ATS Compatibility</p>
-            </div>
+            )}
 
-            {/* Score Breakdown */}
-            <div className="space-y-4 mb-6">
-              <h4 className="font-medium text-gray-900">Score Breakdown</h4>
-              {Object.entries(atsScore.breakdown).map(([category, score]) => (
-                <div key={category} className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 capitalize">
-                    {category === 'keywords' ? 'Keywords' : category}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-16 bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${score}%` }}
-                      />
-                    </div>
-                    <span className={`text-sm font-medium ${getScoreColor(score)}`}>
-                      {score}
+            {atsScore && (
+              <>
+                {/* Overall Score */}
+                <div className="text-center mb-6">
+                  <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full ${getScoreBgColor(atsScore.overall)} mb-3`}>
+                    <span className={`text-3xl font-bold ${getScoreColor(atsScore.overall)}`}>
+                      {atsScore.overall}
                     </span>
                   </div>
+                  <p className="text-gray-600">Overall ATS Compatibility</p>
+                  {jobDescription && (
+                    <p className="text-xs text-blue-600 mt-1">Analyzed against job description</p>
+                  )}
                 </div>
-              ))}
-            </div>
 
-            {/* Suggestions */}
-            <div className="mb-6">
-              <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-                <AlertCircle className="h-4 w-4 mr-2 text-orange-500" />
-                Improvement Suggestions
-              </h4>
-              <ul className="space-y-2">
-                {atsScore.suggestions.map((suggestion, index) => (
-                  <li key={index} className="text-sm text-gray-600 flex items-start">
-                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Missing Keywords */}
-            {atsScore.missingKeywords.length > 0 && (
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-900 mb-3">Consider Adding Keywords</h4>
-                <div className="flex flex-wrap gap-2">
-                  {atsScore.missingKeywords.slice(0, 8).map((keyword, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                    >
-                      {keyword}
-                    </span>
+                {/* Score Breakdown */}
+                <div className="space-y-4 mb-6">
+                  <h4 className="font-medium text-gray-900">Score Breakdown</h4>
+                  {Object.entries(atsScore.breakdown).map(([category, score]) => (
+                    <div key={category} className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 capitalize">
+                        {category === 'keywords' ? 'Keywords' : category}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${score}%` }}
+                          />
+                        </div>
+                        <span className={`text-sm font-medium ${getScoreColor(score)}`}>
+                          {score}
+                        </span>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
+
+                {/* Suggestions */}
+                <div className="mb-6">
+                  <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-2 text-orange-500" />
+                    AI Suggestions
+                  </h4>
+                  <ul className="space-y-2">
+                    {atsScore.suggestions.map((suggestion, index) => (
+                      <li key={index} className="text-sm text-gray-600 flex items-start">
+                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0" />
+                        {suggestion}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Missing Keywords */}
+                {atsScore.missingKeywords.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="font-medium text-gray-900 mb-3">Consider Adding Keywords</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {atsScore.missingKeywords.slice(0, 8).map((keyword, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Refresh Analysis Button */}
+                <button
+                  onClick={analyzeResume}
+                  disabled={isAnalyzing}
+                  className="w-full mb-3 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      <span>Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUp className="h-4 w-4" />
+                      <span>Refresh Analysis</span>
+                    </>
+                  )}
+                </button>
+              </>
             )}
 
             {/* Download Button */}

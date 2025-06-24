@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader } from 'lucide-react';
+import { Send, Bot, User, Loader, Key } from 'lucide-react';
 import { ChatMessage, Resume } from '../types/resume';
 import { AIAssistant } from '../utils/aiAssistant';
 
@@ -12,12 +12,13 @@ export function AIChat({ resume }: AIChatProps) {
     {
       id: '1',
       type: 'assistant',
-      content: "Hi! I'm your AI resume assistant. I'm here to help you create a compelling, ATS-optimized resume. I can help you with writing better summaries, improving your experience descriptions, adding impactful achievements, and optimizing for keywords. What would you like to work on?",
+      content: "Hi! I'm your AI resume assistant powered by OpenAI. I'm here to help you create a compelling, ATS-optimized resume. I can help you with writing better summaries, improving your experience descriptions, adding impactful achievements, and optimizing for keywords. What would you like to work on?",
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const aiAssistant = useRef(new AIAssistant());
 
@@ -58,7 +59,7 @@ export function AIChat({ resume }: AIChatProps) {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: "I apologize, but I'm having trouble processing your request right now. Please try again or ask me something else about your resume.",
+        content: "I apologize, but I'm having trouble processing your request right now. Please make sure your OpenAI API key is configured correctly, or try again later.",
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -82,20 +83,55 @@ export function AIChat({ resume }: AIChatProps) {
     "What projects should I add to my resume?"
   ];
 
+  const hasApiKey = !!import.meta.env.VITE_OPENAI_API_KEY;
+
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-lg">
-              <Bot className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-lg">
+                <Bot className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">AI Resume Assistant</h2>
+                <p className="text-gray-600">Get personalized advice powered by OpenAI</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">AI Resume Assistant</h2>
-              <p className="text-gray-600">Get personalized advice to improve your resume</p>
-            </div>
+            
+            {!hasApiKey && (
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1 text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-sm">
+                  <Key className="h-4 w-4" />
+                  <span>API Key Required</span>
+                </div>
+                <button
+                  onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                  className="text-blue-600 hover:text-blue-800 text-sm underline"
+                >
+                  Configure
+                </button>
+              </div>
+            )}
           </div>
+          
+          {/* API Key Configuration */}
+          {showApiKeyInput && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">OpenAI API Configuration</h4>
+              <p className="text-sm text-blue-700 mb-3">
+                To enable AI-powered features, add your OpenAI API key to your environment variables:
+              </p>
+              <div className="bg-blue-100 p-3 rounded font-mono text-sm text-blue-800">
+                VITE_OPENAI_API_KEY=your_api_key_here
+              </div>
+              <p className="text-xs text-blue-600 mt-2">
+                Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI Platform</a>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Messages */}
@@ -114,7 +150,7 @@ export function AIChat({ resume }: AIChatProps) {
                   className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                     message.type === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-600'
+                      : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
                   }`}
                 >
                   {message.type === 'user' ? (
@@ -146,13 +182,13 @@ export function AIChat({ resume }: AIChatProps) {
           {isLoading && (
             <div className="flex justify-start">
               <div className="max-w-3xl flex space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white flex items-center justify-center">
                   <Bot className="h-4 w-4" />
                 </div>
                 <div className="px-4 py-3 rounded-lg bg-gray-100">
                   <div className="flex items-center space-x-2">
                     <Loader className="h-4 w-4 animate-spin" />
-                    <span className="text-gray-600">AI is thinking...</span>
+                    <span className="text-gray-600">AI is analyzing and responding...</span>
                   </div>
                 </div>
               </div>
@@ -187,7 +223,7 @@ export function AIChat({ resume }: AIChatProps) {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask me anything about your resume..."
+              placeholder={hasApiKey ? "Ask me anything about your resume..." : "Configure OpenAI API key to enable AI features..."}
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               rows={2}
               disabled={isLoading}
@@ -200,6 +236,12 @@ export function AIChat({ resume }: AIChatProps) {
               <Send className="h-4 w-4" />
             </button>
           </div>
+          
+          {!hasApiKey && (
+            <p className="text-xs text-gray-500 mt-2">
+              💡 Add your OpenAI API key to unlock AI-powered resume advice and analysis
+            </p>
+          )}
         </div>
       </div>
     </div>
