@@ -35,7 +35,7 @@ function App() {
         
         {activeTab === 'chat' && (
           <div className="h-full">
-            <AIChat resume={resume} />
+            <AIChat resume={resume} onResumeChange={setResume} />
           </div>
         )}
         

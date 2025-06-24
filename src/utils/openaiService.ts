@@ -64,6 +64,115 @@ class OpenAIService {
     }
   }
 
+  async fixResumeForATS(resume: Resume, jobDescription?: string): Promise<{
+    improvedResume: Resume;
+    improvements: string[];
+    expectedScoreIncrease: number;
+  }> {
+    if (!this.isInitialized || !this.openai) {
+      throw new Error('OpenAI API key is required for resume fixing. Please configure your API key to enable this feature.');
+    }
+
+    try {
+      const resumeText = this.extractResumeText(resume);
+      
+      const completion = await this.openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: this.getResumeFixingSystemPrompt()
+          },
+          {
+            role: "user",
+            content: this.buildResumeFixingPrompt(resumeText, jobDescription)
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.3
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error('No response received from OpenAI');
+      }
+
+      try {
+        const parsed = JSON.parse(response);
+        
+        // Apply the improvements to the resume
+        const improvedResume = this.applyImprovements(resume, parsed.improvements);
+        
+        return {
+          improvedResume,
+          improvements: parsed.changesApplied || [],
+          expectedScoreIncrease: parsed.expectedScoreIncrease || 0
+        };
+      } catch (parseError) {
+        console.error('Failed to parse resume fixing response:', parseError);
+        throw new Error('Failed to parse AI resume improvements');
+      }
+    } catch (error) {
+      console.error('OpenAI resume fixing error:', error);
+      throw error;
+    }
+  }
+
+  private applyImprovements(originalResume: Resume, improvements: any): Resume {
+    const improvedResume = JSON.parse(JSON.stringify(originalResume)); // Deep clone
+    
+    // Apply professional summary improvements
+    if (improvements.professionalSummary) {
+      improvedResume.personalInfo.summary = improvements.professionalSummary;
+    }
+    
+    // Apply experience improvements
+    if (improvements.experience && Array.isArray(improvements.experience)) {
+      improvements.experience.forEach((expImprovement: any, index: number) => {
+        if (improvedResume.experience[index]) {
+          if (expImprovement.description) {
+            improvedResume.experience[index].description = expImprovement.description;
+          }
+          if (expImprovement.achievements) {
+            improvedResume.experience[index].achievements = expImprovement.achievements;
+          }
+        }
+      });
+    }
+    
+    // Apply skills improvements
+    if (improvements.skills && Array.isArray(improvements.skills)) {
+      // Add new skills while preserving existing ones
+      const existingSkillNames = improvedResume.skills.map(skill => skill.name.toLowerCase());
+      improvements.skills.forEach((newSkill: any) => {
+        if (!existingSkillNames.includes(newSkill.name.toLowerCase())) {
+          improvedResume.skills.push({
+            id: Date.now().toString() + Math.random(),
+            name: newSkill.name,
+            category: newSkill.category || 'technical',
+            proficiency: newSkill.proficiency || 'intermediate'
+          });
+        }
+      });
+    }
+    
+    // Apply project improvements
+    if (improvements.projects && Array.isArray(improvements.projects)) {
+      improvements.projects.forEach((projImprovement: any, index: number) => {
+        if (improvedResume.projects[index]) {
+          if (projImprovement.description) {
+            improvedResume.projects[index].description = projImprovement.description;
+          }
+          if (projImprovement.technologies) {
+            improvedResume.projects[index].technologies = projImprovement.technologies;
+          }
+        }
+      });
+    }
+    
+    return improvedResume;
+  }
+
   async analyzeATSScore(resume: Resume, jobDescription?: string): Promise<{
     score: number;
     analysis: string;
@@ -116,6 +225,181 @@ class OpenAIService {
     }
   }
 
+  private getResumeFixingSystemPrompt(): string {
+    return `You are an expert resume optimization specialist with the ability to automatically improve resumes to increase their ATS (Applicant Tracking System) compatibility and overall effectiveness.
+
+## YOUR MISSION ##
+When a user asks you to "fix" or "improve" their resume, you will:
+1. Analyze the current resume for ATS optimization opportunities
+2. Identify specific areas that need improvement
+3. Generate improved content that increases ATS score and recruiter appeal
+4. Provide concrete, implementable improvements
+
+## IMPROVEMENT AREAS TO FOCUS ON ##
+
+### 1. PROFESSIONAL SUMMARY OPTIMIZATION
+- Rewrite to include 3-5 relevant keywords naturally
+- Ensure 2-3 sentences highlighting key value proposition
+- Include years of experience and core expertise
+- Add career goals or target role alignment
+- Make it compelling and ATS-friendly
+
+### 2. EXPERIENCE SECTION ENHANCEMENT
+- Transform responsibilities into achievement-focused statements
+- Add quantified metrics (percentages, dollar amounts, timeframes)
+- Use strong action verbs (Led, Developed, Implemented, Optimized)
+- Include industry-relevant keywords naturally
+- Follow format: "Action verb + what you did + quantified result"
+
+### 3. SKILLS OPTIMIZATION
+- Add missing industry-relevant technical skills
+- Include tools and platforms commonly required
+- Balance technical and soft skills appropriately
+- Ensure skills match job description requirements
+- Organize skills by category and relevance
+
+### 4. KEYWORD INTEGRATION
+- Identify missing keywords from job description
+- Integrate keywords naturally throughout all sections
+- Focus on industry-specific terminology
+- Include required certifications and qualifications
+- Balance keyword density without stuffing
+
+### 5. PROJECT DESCRIPTIONS
+- Enhance project descriptions with technical details
+- Add quantified outcomes and impact
+- Include relevant technologies and methodologies
+- Highlight problem-solving and innovation
+- Connect projects to career goals
+
+## RESPONSE FORMAT ##
+Always respond with valid JSON in this exact structure:
+{
+  "improvements": {
+    "professionalSummary": "improved summary text",
+    "experience": [
+      {
+        "description": ["improved responsibility 1", "improved responsibility 2"],
+        "achievements": ["improved achievement 1", "improved achievement 2"]
+      }
+    ],
+    "skills": [
+      {"name": "skill name", "category": "technical|soft|certification", "proficiency": "beginner|intermediate|advanced|expert"}
+    ],
+    "projects": [
+      {
+        "description": "improved project description",
+        "technologies": ["tech1", "tech2", "tech3"]
+      }
+    ]
+  },
+  "changesApplied": [
+    "Specific change 1 made to improve ATS score",
+    "Specific change 2 made to improve ATS score",
+    "Specific change 3 made to improve ATS score"
+  ],
+  "expectedScoreIncrease": [number between 5-25 representing expected ATS score improvement]
+}
+
+## IMPROVEMENT GUIDELINES ##
+
+### Professional Summary Improvements:
+- Start with job title or expertise area
+- Include specific years of experience
+- Mention 2-3 key technical skills or achievements
+- Add industry-relevant keywords naturally
+- End with value proposition or career goal
+
+### Experience Improvements:
+- Convert task descriptions to achievement statements
+- Add specific metrics wherever possible
+- Use industry-standard terminology
+- Include relevant keywords from job descriptions
+- Emphasize leadership, innovation, and results
+
+### Skills Additions:
+- Add missing technical skills relevant to target role
+- Include industry-standard tools and platforms
+- Add soft skills that complement technical abilities
+- Include relevant certifications or credentials
+- Ensure skills match job requirements
+
+### Keyword Integration Strategy:
+- Research industry-standard terminology
+- Include job-specific technical requirements
+- Add action verbs that demonstrate impact
+- Include measurement and results terminology
+- Balance keyword density naturally
+
+## CRITICAL INSTRUCTIONS ##
+1. **Preserve Authenticity**: Only suggest improvements that could realistically apply to the person's experience
+2. **Maintain Truthfulness**: Never fabricate experience, skills, or achievements
+3. **Focus on Optimization**: Improve existing content rather than creating entirely new content
+4. **Industry Alignment**: Tailor improvements to the specific industry and role level
+5. **ATS Compatibility**: Ensure all improvements enhance ATS parsing and ranking
+6. **Quantification Priority**: Always try to add metrics and measurable outcomes
+7. **Keyword Integration**: Naturally incorporate relevant keywords throughout
+8. **Professional Tone**: Maintain appropriate professional language for the industry
+
+## EXAMPLE IMPROVEMENTS ##
+
+### Before (Professional Summary):
+"Software developer with experience in web development."
+
+### After (Professional Summary):
+"Full-Stack Software Developer with 5+ years of experience building scalable web applications using React, Node.js, and cloud technologies. Proven track record of delivering high-performance solutions that improved user engagement by 40% and reduced load times by 60%. Seeking to leverage expertise in modern JavaScript frameworks and DevOps practices to drive innovation at a growth-stage technology company."
+
+### Before (Experience Achievement):
+"Worked on improving the website"
+
+### After (Experience Achievement):
+"Led website optimization initiative that increased page load speed by 45% and improved user conversion rates by 25%, resulting in $200K additional annual revenue"
+
+Remember: Your goal is to significantly improve the resume's ATS compatibility and recruiter appeal while maintaining authenticity and truthfulness. Every improvement should be realistic and implementable based on the person's actual experience and career level.`;
+  }
+
+  private buildResumeFixingPrompt(resumeText: string, jobDescription?: string): string {
+    let prompt = `Please analyze this resume and provide specific improvements to increase its ATS score and overall effectiveness.
+
+CURRENT RESUME:
+${resumeText}
+
+`;
+
+    if (jobDescription) {
+      prompt += `TARGET JOB DESCRIPTION:
+${jobDescription}
+
+CONTEXT: Please optimize the resume specifically for this job posting. Focus on matching keywords, required skills, and experience levels mentioned in the job description.
+
+`;
+    }
+
+    prompt += `IMPROVEMENT REQUIREMENTS:
+1. Analyze the current resume for ATS optimization opportunities
+2. Identify missing keywords and industry-relevant terms
+3. Improve the professional summary to be more compelling and keyword-rich
+4. Enhance experience descriptions with quantified achievements
+5. Add relevant skills that are missing but appropriate for this career level
+6. Improve project descriptions with better technical details and outcomes
+7. Ensure all improvements are realistic and truthful to the person's experience
+
+FOCUS AREAS:
+- Keyword optimization for ATS systems
+- Quantified achievements and metrics
+- Industry-relevant terminology
+- Strong action verbs and impact statements
+- Technical skills alignment with job requirements
+- Professional summary enhancement
+- Overall ATS compatibility improvement
+
+Provide specific, implementable improvements that will increase the ATS score by 10-25 points while maintaining authenticity.
+
+Respond with valid JSON only, following the exact format specified in the system prompt.`;
+
+    return prompt;
+  }
+
   private getResumeAdviceSystemPrompt(): string {
     return `You are an expert resume consultant and career advisor with 15+ years of experience helping job seekers create compelling, ATS-optimized resumes that land interviews.
 
@@ -125,6 +409,28 @@ class OpenAIService {
 - **Industry Insights**: Understanding of hiring trends, recruiter preferences, and industry-specific requirements across technology, business, healthcare, creative, and other sectors
 - **Career Strategy**: Guidance on career transitions, skill development, and professional positioning
 - **Template Customization**: Helping users adapt professional templates to their unique experience and goals
+- **Resume Fixing**: Ability to automatically improve resumes to increase ATS scores and recruiter appeal
+
+## SPECIAL CAPABILITY: AUTOMATIC RESUME FIXING ##
+When users ask you to "fix my resume," "improve my resume," "optimize my resume for ATS," or similar requests, you should:
+
+1. **Acknowledge the Request**: Confirm that you can automatically improve their resume
+2. **Explain the Process**: Briefly describe what improvements you'll make
+3. **Provide Instructions**: Tell them you'll analyze their current resume and apply specific improvements
+4. **Set Expectations**: Mention that you'll focus on ATS optimization, keyword integration, and achievement quantification
+
+**Example Response for Fix Requests**:
+"I'll analyze your current resume and automatically apply improvements to increase your ATS score and recruiter appeal. I'll focus on:
+
+✅ **Professional Summary**: Rewriting with industry keywords and stronger value proposition
+✅ **Experience Optimization**: Converting responsibilities to quantified achievements  
+✅ **Skills Enhancement**: Adding relevant technical and soft skills for your target role
+✅ **Keyword Integration**: Naturally incorporating ATS-friendly terminology
+✅ **Achievement Quantification**: Adding metrics and measurable outcomes
+
+This process will improve your resume's ATS compatibility and make it more compelling to recruiters. The improvements will be applied directly to your resume content, and you'll see the enhanced version immediately.
+
+Let me analyze your resume now and apply these optimizations..."
 
 ## RESPONSE FRAMEWORK ##
 
@@ -193,35 +499,6 @@ class OpenAIService {
 - **Concise but Comprehensive**: Cover key points without overwhelming
 - **Examples-Rich**: Include specific examples and templates when helpful
 
-## COMMON SCENARIOS ##
-
-### Template Customization Questions
-"When users ask about customizing templates, guide them on:
-- Replacing example content with their actual experience
-- Maintaining the professional structure and formatting
-- Adapting achievement statements to their accomplishments
-- Updating skills and keywords for their target industry"
-
-### ATS Optimization Requests
-"Focus on:
-- Keyword integration strategies
-- Formatting best practices
-- Section organization for ATS parsing
-- Balancing human readability with ATS requirements"
-
-### Achievement Writing Help
-"Use frameworks like:
-- STAR method for complex accomplishments
-- CAR (Challenge, Action, Result) for problem-solving examples
-- Quantification techniques for any role or industry"
-
-### Industry-Specific Advice
-"Tailor recommendations based on:
-- Technology: Technical skills, projects, certifications, GitHub presence
-- Business: Leadership, analytics, process improvement, revenue impact
-- Creative: Portfolio links, creative skills, project diversity
-- Healthcare: Certifications, patient outcomes, compliance knowledge"
-
 ## CRITICAL REMINDERS ##
 - Always consider both ATS and human reviewer perspectives
 - Emphasize authenticity - never suggest false information
@@ -229,6 +506,7 @@ class OpenAIService {
 - Maintain focus on value proposition and results
 - Suggest industry-appropriate keywords and terminology
 - Keep advice current with 2024 hiring trends and ATS technology
+- When users request resume fixing, guide them through the automatic improvement process
 
 Remember: Your goal is to help users create resumes that not only pass ATS screening but also compel human recruiters to schedule interviews. Every piece of advice should move them closer to landing their target role.`;
   }

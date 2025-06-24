@@ -1,27 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader, Key, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Loader, Key, Sparkles, Zap, TrendingUp } from 'lucide-react';
 import { ChatMessage, Resume } from '../types/resume';
-import { AIAssistant } from '../utils/aiAssistant';
+import { openaiService } from '../utils/openaiService';
 import { resumeTemplates } from '../data/resumeTemplates';
 
 interface AIChatProps {
   resume: Resume;
+  onResumeChange?: (resume: Resume) => void;
 }
 
-export function AIChat({ resume }: AIChatProps) {
+export function AIChat({ resume, onResumeChange }: AIChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       type: 'assistant',
-      content: "Hi! I'm your AI resume assistant powered by OpenAI. I'm here to help you create a compelling, ATS-optimized resume. I can help you with writing better summaries, improving your experience descriptions, adding impactful achievements, optimizing for keywords, and customizing template content. What would you like to work on?",
+      content: "Hi! I'm your AI resume assistant powered by OpenAI. I can help you:\n\n🔧 **Fix & Optimize Your Resume** - I can automatically improve your resume to increase ATS scores\n📝 **Write Better Content** - Professional summaries, achievement statements, and descriptions\n🎯 **ATS Optimization** - Keyword integration and formatting for applicant tracking systems\n📊 **Analyze & Score** - Detailed analysis with specific improvement recommendations\n🎨 **Template Guidance** - Help customize professional templates to your experience\n\nJust ask me to \"fix my resume\" or ask any specific question about improving your resume!",
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFixingResume, setIsFixingResume] = useState(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const aiAssistant = useRef(new AIAssistant());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,8 +32,86 @@ export function AIChat({ resume }: AIChatProps) {
     scrollToBottom();
   }, [messages]);
 
+  const detectResumeFixRequest = (message: string): boolean => {
+    const fixKeywords = [
+      'fix my resume', 'improve my resume', 'optimize my resume', 'fix resume',
+      'improve resume', 'optimize resume', 'make my resume better', 'enhance my resume',
+      'increase ats score', 'improve ats score', 'optimize for ats', 'fix ats',
+      'make resume ats friendly', 'improve resume score'
+    ];
+    
+    return fixKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+  };
+
+  const handleResumeFixing = async (userMessage: string) => {
+    setIsFixingResume(true);
+    
+    try {
+      // Add user message
+      const userMsg: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: userMessage,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, userMsg]);
+
+      // Add processing message
+      const processingMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: "🔧 **Analyzing and fixing your resume...**\n\nI'm applying AI-powered optimizations to:\n• Professional summary enhancement\n• Experience achievement quantification\n• Skills optimization\n• Keyword integration\n• ATS compatibility improvements\n\nThis will take a moment...",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, processingMsg]);
+
+      // Call the resume fixing service
+      const fixResult = await openaiService.fixResumeForATS(resume);
+      
+      // Apply the improvements to the resume
+      if (onResumeChange) {
+        onResumeChange(fixResult.improvedResume);
+      }
+
+      // Create success message
+      const successMsg: ChatMessage = {
+        id: (Date.now() + 2).toString(),
+        type: 'assistant',
+        content: `✅ **Resume Successfully Optimized!**\n\n**Improvements Applied:**\n${fixResult.improvements.map(improvement => `• ${improvement}`).join('\n')}\n\n**Expected ATS Score Increase:** +${fixResult.expectedScoreIncrease} points\n\n🎯 **What's Changed:**\nYour resume has been automatically updated with optimized content. Check the Builder and Preview tabs to see the improvements!\n\n💡 **Next Steps:**\n• Review the changes in the Builder tab\n• Check your new ATS score in the Preview tab\n• Make any additional personal adjustments\n• Download your improved resume\n\nWould you like me to explain any specific improvements or help with additional optimizations?`,
+        timestamp: new Date()
+      };
+
+      // Remove processing message and add success message
+      setMessages(prev => prev.slice(0, -1).concat(successMsg));
+
+    } catch (error) {
+      console.error('Error fixing resume:', error);
+      
+      const errorMsg: ChatMessage = {
+        id: (Date.now() + 3).toString(),
+        type: 'assistant',
+        content: `❌ **Resume Fixing Error**\n\n${error instanceof Error ? error.message : 'An error occurred while fixing your resume.'}\n\nPlease ensure your OpenAI API key is configured correctly, or try asking me specific questions about improving individual sections of your resume.`,
+        timestamp: new Date()
+      };
+
+      // Remove processing message and add error message
+      setMessages(prev => prev.slice(0, -1).concat(errorMsg));
+    } finally {
+      setIsFixingResume(false);
+    }
+  };
+
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim() || isLoading || isFixingResume) return;
+
+    // Check if this is a resume fixing request
+    if (detectResumeFixRequest(inputMessage)) {
+      await handleResumeFixing(inputMessage);
+      setInputMessage('');
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -46,7 +125,7 @@ export function AIChat({ resume }: AIChatProps) {
     setIsLoading(true);
 
     try {
-      const response = await aiAssistant.current.generateResponse(inputMessage, resume);
+      const response = await openaiService.generateResumeAdvice(inputMessage, resume);
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -60,7 +139,7 @@ export function AIChat({ resume }: AIChatProps) {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: "I apologize, but I'm having trouble processing your request right now. Please make sure your OpenAI API key is configured correctly, or try again later.",
+        content: `❌ **Error**: ${error instanceof Error ? error.message : 'An error occurred while processing your request.'}\n\nPlease ensure your OpenAI API key is configured correctly, or try again later.`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -77,14 +156,14 @@ export function AIChat({ resume }: AIChatProps) {
   };
 
   const quickQuestions = [
+    "Fix my resume and increase ATS score",
     "How can I improve my professional summary?",
     "Help me write better achievement statements",
     "What keywords should I include for ATS?",
     "How can I make my experience more impactful?",
     "What projects should I add to my resume?",
     "Show me professional resume templates",
-    "How do I quantify my achievements?",
-    "Help me customize template content for my experience"
+    "How do I quantify my achievements?"
   ];
 
   const handleQuickQuestion = (question: string) => {
@@ -101,15 +180,8 @@ export function AIChat({ resume }: AIChatProps) {
       };
       
       setMessages(prev => [...prev, templateMessage]);
-    } else if (question === "Help me customize template content for my experience") {
-      const customizationMessage: ChatMessage = {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: `Great question! Here's how to effectively customize template content:\n\n**1. Replace Example Content:**\n• Substitute template job titles, companies, and dates with your actual experience\n• Update skills to match your expertise level and relevant technologies\n• Replace project examples with your own work\n\n**2. Adapt Achievement Statements:**\n• Keep the quantified format (numbers, percentages, dollar amounts)\n• Replace specific metrics with your own accomplishments\n• Maintain the action verb + result structure\n\n**3. Tailor Industry Language:**\n• Update technical terms to match your field\n• Include industry-specific keywords from job descriptions\n• Adjust the professional summary to reflect your career goals\n\n**4. Maintain Professional Structure:**\n• Keep the proven formatting and section organization\n• Preserve the ATS-friendly layout\n• Follow the same bullet point style for consistency\n\nWould you like help customizing any specific section of your template?`,
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, customizationMessage]);
+    } else if (question === "Fix my resume and increase ATS score") {
+      handleResumeFixing(question);
     } else {
       setInputMessage(question);
     }
@@ -131,7 +203,7 @@ export function AIChat({ resume }: AIChatProps) {
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                   AI Resume Assistant
                 </h2>
-                <p className="text-gray-600 text-sm">Get personalized advice powered by OpenAI</p>
+                <p className="text-gray-600 text-sm">Powered by OpenAI • Can automatically fix and optimize resumes</p>
               </div>
             </div>
             
@@ -156,7 +228,7 @@ export function AIChat({ resume }: AIChatProps) {
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <h4 className="font-medium text-blue-900 mb-2">OpenAI API Configuration</h4>
               <p className="text-sm text-blue-700 mb-3">
-                To enable AI-powered features, add your OpenAI API key to your environment variables:
+                To enable AI-powered features including automatic resume fixing, add your OpenAI API key:
               </p>
               <div className="bg-blue-100 p-3 rounded font-mono text-sm text-blue-800 break-all">
                 VITE_OPENAI_API_KEY=your_api_key_here
@@ -221,7 +293,7 @@ export function AIChat({ resume }: AIChatProps) {
             </div>
           ))}
           
-          {isLoading && (
+          {(isLoading || isFixingResume) && (
             <div className="flex justify-start">
               <div className="max-w-[85%] sm:max-w-3xl flex space-x-2 sm:space-x-3">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white flex items-center justify-center">
@@ -230,7 +302,9 @@ export function AIChat({ resume }: AIChatProps) {
                 <div className="px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-gray-100">
                   <div className="flex items-center space-x-2">
                     <Loader className="h-4 w-4 animate-spin" />
-                    <span className="text-gray-600 text-sm sm:text-base">AI is analyzing and responding...</span>
+                    <span className="text-gray-600 text-sm sm:text-base">
+                      {isFixingResume ? 'AI is fixing your resume...' : 'AI is analyzing and responding...'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -245,16 +319,23 @@ export function AIChat({ resume }: AIChatProps) {
           <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex-shrink-0">
             <div className="flex items-center space-x-2 mb-3">
               <Sparkles className="h-4 w-4 text-purple-600" />
-              <p className="text-sm font-medium text-gray-700">Quick questions to get started:</p>
+              <p className="text-sm font-medium text-gray-700">Quick actions to get started:</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {quickQuestions.map((question, index) => (
                 <button
                   key={index}
                   onClick={() => handleQuickQuestion(question)}
-                  className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-left"
+                  disabled={!hasApiKey && question.includes('Fix my resume')}
+                  className={`px-3 py-2 text-sm rounded-lg transition-colors text-left flex items-center space-x-2 ${
+                    question.includes('Fix my resume') 
+                      ? 'bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 text-purple-800 font-medium'
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  } ${!hasApiKey && question.includes('Fix my resume') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {question}
+                  {question.includes('Fix my resume') && <Zap className="h-4 w-4" />}
+                  {question.includes('ATS') && <TrendingUp className="h-4 w-4" />}
+                  <span>{question}</span>
                 </button>
               ))}
             </div>
@@ -268,14 +349,14 @@ export function AIChat({ resume }: AIChatProps) {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={hasApiKey ? "Ask me anything about your resume..." : "Configure OpenAI API key to enable AI features..."}
+              placeholder={hasApiKey ? "Ask me to fix your resume or any question about improving it..." : "Configure OpenAI API key to enable AI features..."}
               className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
               rows={2}
-              disabled={isLoading}
+              disabled={isLoading || isFixingResume || !hasApiKey}
             />
             <button
               onClick={sendMessage}
-              disabled={!inputMessage.trim() || isLoading}
+              disabled={!inputMessage.trim() || isLoading || isFixingResume || !hasApiKey}
               className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start"
             >
               <Send className="h-4 w-4" />
@@ -285,7 +366,7 @@ export function AIChat({ resume }: AIChatProps) {
           
           {!hasApiKey && (
             <p className="text-xs text-gray-500 mt-2">
-              💡 Add your OpenAI API key to unlock AI-powered resume advice and analysis
+              💡 Add your OpenAI API key to unlock AI-powered resume fixing and analysis
             </p>
           )}
         </div>
