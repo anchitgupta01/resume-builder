@@ -21,7 +21,7 @@ export async function analyzeATS(resume: Resume, jobDescription?: string): Promi
     const aiAnalysis = await openaiService.analyzeATSScore(resume, jobDescription);
     
     // Convert AI analysis to our ATSScore format
-    const breakdown = calculateBreakdown(resume, aiAnalysis.keywords);
+    const breakdown = calculateBreakdown(resume, aiAnalysis.keywords, aiAnalysis.score);
     
     return {
       overall: aiAnalysis.score,
@@ -37,33 +37,35 @@ export async function analyzeATS(resume: Resume, jobDescription?: string): Promi
   }
 }
 
-function calculateBreakdown(resume: Resume, aiKeywords: string[]): ATSScore['breakdown'] {
+function calculateBreakdown(resume: Resume, aiKeywords: string[], overallScore: number): ATSScore['breakdown'] {
   const resumeText = extractResumeText(resume).toLowerCase();
   
   // Keywords score based on AI-suggested keywords
   const foundKeywords = aiKeywords.filter(keyword => 
     resumeText.includes(keyword.toLowerCase())
   );
-  const keywordScore = Math.min((foundKeywords.length / aiKeywords.length) * 100, 100);
+  const keywordScore = aiKeywords.length > 0 
+    ? Math.min((foundKeywords.length / aiKeywords.length) * 100, 100)
+    : 60;
   
-  // Formatting score
+  // Calculate other scores based on resume content
   const formattingScore = analyzeFormatting(resume);
-  
-  // Experience score
   const experienceScore = analyzeExperience(resume);
-  
-  // Education score
   const educationScore = analyzeEducation(resume);
-  
-  // Skills score
   const skillsScore = analyzeSkills(resume);
   
+  // Adjust scores to align with overall AI score
+  const calculatedAverage = (keywordScore * 0.3 + formattingScore * 0.2 + 
+                           experienceScore * 0.25 + educationScore * 0.1 + skillsScore * 0.15);
+  
+  const adjustmentFactor = overallScore / calculatedAverage;
+  
   return {
-    keywords: Math.round(keywordScore),
-    formatting: Math.round(formattingScore),
-    experience: Math.round(experienceScore),
-    education: Math.round(educationScore),
-    skills: Math.round(skillsScore)
+    keywords: Math.round(Math.min(keywordScore * adjustmentFactor, 100)),
+    formatting: Math.round(Math.min(formattingScore * adjustmentFactor, 100)),
+    experience: Math.round(Math.min(experienceScore * adjustmentFactor, 100)),
+    education: Math.round(Math.min(educationScore * adjustmentFactor, 100)),
+    skills: Math.round(Math.min(skillsScore * adjustmentFactor, 100))
   };
 }
 
