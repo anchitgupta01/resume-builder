@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Download, FileText, TrendingUp, AlertCircle, Settings, Loader, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, FileText, TrendingUp, AlertCircle, Settings, Loader, ChevronDown, ChevronUp, Key } from 'lucide-react';
 import { Resume, ATSScore } from '../types/resume';
 import { analyzeATS } from '../utils/atsAnalyzer';
 
@@ -11,6 +11,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
   const resumeRef = useRef<HTMLDivElement>(null);
   const [atsScore, setAtsScore] = useState<ATSScore | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [jobDescription, setJobDescription] = useState('');
   const [showJobDescInput, setShowJobDescInput] = useState(false);
   const [isScorePanelCollapsed, setIsScorePanelCollapsed] = useState(false);
@@ -21,11 +22,13 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
 
   const analyzeResume = async () => {
     setIsAnalyzing(true);
+    setAnalysisError(null);
     try {
       const score = await analyzeATS(resume, jobDescription || undefined);
       setAtsScore(score);
     } catch (error) {
       console.error('Error analyzing resume:', error);
+      setAnalysisError(error instanceof Error ? error.message : 'Failed to analyze resume');
     } finally {
       setIsAnalyzing(false);
     }
@@ -90,18 +93,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
     return 'bg-red-100';
   };
 
-  if (!atsScore && isAnalyzing) {
-    return (
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Analyzing your resume with AI...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const hasApiKey = !!import.meta.env.VITE_OPENAI_API_KEY;
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6">
@@ -142,19 +134,36 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900">ATS Score</h3>
               </div>
-              <button
-                onClick={() => setShowJobDescInput(!showJobDescInput)}
-                className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
-                title="Analyze against job description"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
+              {hasApiKey && (
+                <button
+                  onClick={() => setShowJobDescInput(!showJobDescInput)}
+                  className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+                  title="Analyze against job description"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             {/* Panel Content */}
             <div className={`${isScorePanelCollapsed ? 'hidden' : 'block'} lg:block p-4 sm:p-6`}>
+              {/* API Key Required Notice */}
+              {!hasApiKey && (
+                <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-center space-x-3">
+                    <Key className="h-5 w-5 text-amber-600" />
+                    <div>
+                      <h4 className="font-medium text-amber-900">OpenAI API Key Required</h4>
+                      <p className="text-sm text-amber-700 mt-1">
+                        Add your OpenAI API key to enable AI-powered ATS analysis with personalized insights and recommendations.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Job Description Input */}
-              {showJobDescInput && (
+              {showJobDescInput && hasApiKey && (
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Job Description (Optional)
@@ -184,7 +193,29 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                 </div>
               )}
 
-              {atsScore && (
+              {/* Analysis Error */}
+              {analysisError && (
+                <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <div>
+                      <h4 className="font-medium text-red-900">Analysis Error</h4>
+                      <p className="text-sm text-red-700 mt-1">{analysisError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading State */}
+              {isAnalyzing && (
+                <div className="mb-6 text-center">
+                  <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+                  <p className="text-gray-600">AI is analyzing your resume...</p>
+                </div>
+              )}
+
+              {/* ATS Score Results */}
+              {atsScore && !isAnalyzing && (
                 <>
                   {/* Overall Score */}
                   <div className="text-center mb-6">
@@ -258,23 +289,25 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                   )}
 
                   {/* Refresh Analysis Button */}
-                  <button
-                    onClick={analyzeResume}
-                    disabled={isAnalyzing}
-                    className="w-full mb-3 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <Loader className="h-4 w-4 animate-spin" />
-                        <span>Analyzing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <TrendingUp className="h-4 w-4" />
-                        <span>Refresh Analysis</span>
-                      </>
-                    )}
-                  </button>
+                  {hasApiKey && (
+                    <button
+                      onClick={analyzeResume}
+                      disabled={isAnalyzing}
+                      className="w-full mb-3 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader className="h-4 w-4 animate-spin" />
+                          <span>Analyzing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <TrendingUp className="h-4 w-4" />
+                          <span>Refresh Analysis</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </>
               )}
 

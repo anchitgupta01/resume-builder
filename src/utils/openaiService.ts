@@ -13,7 +13,7 @@ class OpenAIService {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     
     if (!apiKey) {
-      console.warn('OpenAI API key not found. AI features will use fallback responses.');
+      console.warn('OpenAI API key not found. AI features will be disabled.');
       return;
     }
 
@@ -30,7 +30,7 @@ class OpenAIService {
 
   async generateResumeAdvice(userMessage: string, resume: Resume): Promise<string> {
     if (!this.isInitialized || !this.openai) {
-      return this.getFallbackAdvice(userMessage, resume);
+      throw new Error('OpenAI API key is required for AI assistance. Please configure your API key to enable AI features.');
     }
 
     try {
@@ -48,14 +48,19 @@ class OpenAIService {
             content: `Resume Context:\n${resumeContext}\n\nUser Question: ${userMessage}`
           }
         ],
-        max_tokens: 800,
+        max_tokens: 1000,
         temperature: 0.7
       });
 
-      return completion.choices[0]?.message?.content || this.getFallbackAdvice(userMessage, resume);
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error('No response received from OpenAI');
+      }
+
+      return response;
     } catch (error) {
       console.error('OpenAI API error:', error);
-      return this.getFallbackAdvice(userMessage, resume);
+      throw error;
     }
   }
 
@@ -66,7 +71,7 @@ class OpenAIService {
     keywords: string[];
   }> {
     if (!this.isInitialized || !this.openai) {
-      return this.getFallbackATSAnalysis(resume);
+      throw new Error('OpenAI API key is required for ATS analysis. Please configure your API key to enable this feature.');
     }
 
     try {
@@ -84,29 +89,31 @@ class OpenAIService {
             content: this.buildATSAnalysisPrompt(resumeText, jobDescription)
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 1200,
         temperature: 0.3
       });
 
       const response = completion.choices[0]?.message?.content;
-      if (response) {
-        try {
-          const parsed = JSON.parse(response);
-          return {
-            score: Math.max(0, Math.min(100, parsed.score || 0)),
-            analysis: parsed.analysis || "Analysis completed",
-            suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 8) : [],
-            keywords: Array.isArray(parsed.keywords) ? parsed.keywords.slice(0, 15) : []
-          };
-        } catch (parseError) {
-          console.error('Failed to parse OpenAI response:', parseError);
-        }
+      if (!response) {
+        throw new Error('No response received from OpenAI');
+      }
+
+      try {
+        const parsed = JSON.parse(response);
+        return {
+          score: Math.max(0, Math.min(100, parsed.score || 0)),
+          analysis: parsed.analysis || "Analysis completed",
+          suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 8) : [],
+          keywords: Array.isArray(parsed.keywords) ? parsed.keywords.slice(0, 15) : []
+        };
+      } catch (parseError) {
+        console.error('Failed to parse OpenAI response:', parseError);
+        throw new Error('Failed to parse AI analysis response');
       }
     } catch (error) {
       console.error('OpenAI ATS analysis error:', error);
+      throw error;
     }
-
-    return this.getFallbackATSAnalysis(resume);
   }
 
   private getResumeAdviceSystemPrompt(): string {
@@ -496,112 +503,6 @@ Respond with valid JSON only, following the exact format specified in the system
     }
     
     return sections.join('\n');
-  }
-
-  private getFallbackAdvice(userMessage: string, resume: Resume): string {
-    const message = userMessage.toLowerCase();
-    
-    // Template-related questions
-    if (message.includes('template') || message.includes('customize')) {
-      return "Great question about template customization! Here's how to make any template your own:\n\n**1. Personal Information**: Replace all contact details with your own, but keep the professional summary structure and adapt the content to your experience.\n\n**2. Work Experience**: Use the template's achievement format but substitute with your actual accomplishments. Keep the quantified structure (numbers, percentages, results) but make the content authentic to your career.\n\n**3. Skills Section**: Replace template skills with your actual expertise, maintaining the same organization and proficiency levels that match your real abilities.\n\n**4. Projects**: Substitute template projects with your own work, keeping the same descriptive format and technology listings.\n\n**Key Tip**: Templates provide the professional structure and ATS-friendly formatting - your job is to fill them with compelling, truthful content about your unique experience and achievements!";
-    }
-    
-    if (message.includes('summary') || message.includes('objective')) {
-      return "Your professional summary should be 2-3 sentences highlighting your key strengths, years of experience, and value proposition. Start with your job title or expertise area, mention your years of experience, highlight 2-3 key skills or achievements, and end with what you're seeking or what value you bring.\n\n**Template**: '[Title] with [X years] experience in [key skills]. [Major achievement or expertise]. Seeking to [career goal] at [type of company].'\n\n**Example**: 'Experienced Software Engineer with 5+ years developing scalable web applications using React and Node.js. Led cross-functional teams to deliver 15+ projects on time, improving system performance by 40%. Seeking to leverage full-stack expertise and leadership skills to drive innovation at a growth-stage technology company.'\n\n**ATS Tips**: Include 3-5 relevant keywords from your target job descriptions naturally within the summary.";
-    }
-    
-    if (message.includes('experience') || message.includes('work') || message.includes('job') || message.includes('achievement')) {
-      return "Transform your experience section by focusing on achievements rather than responsibilities. Use the STAR method (Situation, Task, Action, Result) and quantify everything possible.\n\n**Formula**: Action verb + what you did + quantified result\n\n**Before**: 'Managed social media accounts'\n**After**: 'Increased social media engagement by 150% over 6 months by developing and executing content strategy across 4 platforms, resulting in 2,000 new followers and 25% boost in website traffic'\n\n**Power Action Verbs**: Led, Developed, Implemented, Optimized, Achieved, Increased, Reduced, Streamlined, Delivered, Built\n\n**Quantification Ideas**: Percentages, dollar amounts, time saved, team sizes, project counts, user numbers, efficiency gains, cost reductions";
-    }
-    
-    if (message.includes('skill')) {
-      return "Organize your skills strategically by relevance to your target role:\n\n**Technical Skills**: Programming languages, software, tools, platforms\n**Soft Skills**: Leadership, communication, problem-solving, teamwork\n**Certifications**: Professional credentials and licenses\n**Languages**: Specify proficiency levels\n\n**Pro Tips**:\n• List skills in order of relevance to target job\n• Include proficiency levels when meaningful\n• Match skills to job description keywords\n• Group similar skills together\n• Only include skills you can confidently discuss in interviews\n\n**Example Organization**:\n- Technical: JavaScript (Expert), React (Advanced), Python (Intermediate)\n- Leadership: Team Management, Project Planning, Mentoring\n- Certifications: AWS Certified Developer, Scrum Master";
-    }
-    
-    if (message.includes('keyword') || message.includes('ats')) {
-      return "To optimize for ATS systems, study 3-5 job descriptions for your target role and identify recurring keywords. Incorporate these naturally throughout your resume:\n\n**Where to Include Keywords**:\n• Professional summary (3-5 key terms)\n• Experience descriptions (naturally woven in)\n• Skills section (exact matches)\n• Project descriptions (technical terms)\n\n**Keyword Categories**:\n• Job titles and role variations\n• Required technical skills and tools\n• Industry terminology and buzzwords\n• Soft skills mentioned in postings\n• Certifications and qualifications\n\n**Example**: If 'project management' appears frequently, write: 'Led project management initiatives for 5 cross-functional teams, delivering projects 20% ahead of schedule using Agile methodologies'\n\n**Avoid**: Keyword stuffing - always prioritize natural, readable content.";
-    }
-    
-    if (message.includes('format') || message.includes('layout')) {
-      return "Use a clean, ATS-friendly format with these best practices:\n\n**Structure**:\n• Standard section headers: 'Professional Experience,' 'Education,' 'Skills'\n• Consistent formatting throughout\n• Clear hierarchy with proper spacing\n• Bullet points for easy scanning\n\n**Formatting Rules**:\n• Standard fonts: Arial, Calibri, Times New Roman (10-12pt)\n• Avoid graphics, tables, or complex layouts\n• Use consistent date formats (MM/YYYY)\n• Left-align all content\n• Save as both PDF and Word formats\n\n**Length Guidelines**:\n• Entry-level: 1 page\n• Mid-level: 1-2 pages\n• Senior/Executive: 2 pages maximum\n\n**ATS-Friendly Elements**: Simple formatting, standard section names, consistent spacing, no headers/footers with critical info.";
-    }
-    
-    if (message.includes('project')) {
-      return "Projects showcase your practical skills and initiative. Include these types:\n\n**Project Types**:\n• Personal coding/creative projects\n• Significant school assignments\n• Volunteer work with measurable impact\n• Freelance or consulting projects\n• Open-source contributions\n\n**For Each Project Include**:\n• **Problem**: What challenge did you solve?\n• **Action**: What technologies/skills did you use?\n• **Role**: What was your specific contribution?\n• **Result**: What was the measurable outcome?\n• **Links**: Live demo and GitHub repository\n\n**Example**: 'E-commerce Web App: Built full-stack application using React, Node.js, and MongoDB. Implemented user authentication, payment processing, and inventory management. Deployed on AWS with 99.9% uptime, supporting 500+ concurrent users. [Live Demo] [GitHub]'\n\n**Pro Tip**: Choose projects that demonstrate skills relevant to your target role.";
-    }
-    
-    if (message.includes('quantify') || message.includes('numbers') || message.includes('metrics')) {
-      return "Quantifying achievements makes your resume compelling and credible. Here's how to add numbers to any role:\n\n**Common Metrics**:\n• **Percentages**: Increased efficiency by 30%, improved accuracy by 25%\n• **Dollar Amounts**: Saved $50K annually, generated $2M in revenue\n• **Time**: Reduced processing time from 2 hours to 30 minutes\n• **Volume**: Managed 100+ customer accounts, processed 500+ orders daily\n• **Team Size**: Led team of 8 developers, coordinated 15-person project\n• **Scope**: Across 5 departments, 3 locations, 10 product lines\n\n**If You Don't Have Exact Numbers**:\n• Use ranges: 'Managed 50-75 client relationships'\n• Estimate conservatively: 'Approximately 200+ users'\n• Use relative terms: 'Significantly reduced,' 'Substantially improved'\n\n**Framework**: [Action] + [What] + [Quantified Result] + [Time Period]\n**Example**: 'Streamlined inventory process, reducing stock discrepancies by 40% over 6 months'";
-    }
-    
-    // General advice
-    return "I'm here to help you create an outstanding resume! I can assist with:\n\n**✏️ Content Creation**:\n• Writing compelling professional summaries\n• Crafting achievement-focused experience descriptions\n• Optimizing skills sections for your target role\n• Developing impactful project descriptions\n\n**🎯 ATS Optimization**:\n• Keyword integration strategies\n• Formatting best practices\n• Industry-specific terminology\n• Applicant tracking system compatibility\n\n**📋 Template Guidance**:\n• Customizing professional templates\n• Adapting example content to your experience\n• Maintaining structure while personalizing content\n• Preserving ATS-friendly formatting\n\n**📈 Career Strategy**:\n• Positioning for career transitions\n• Highlighting transferable skills\n• Industry-specific advice\n• Interview preparation tips\n\nWhat specific aspect would you like to improve? Feel free to ask about any section of your resume or share a particular challenge you're facing!";
-  }
-
-  private getFallbackATSAnalysis(resume: Resume) {
-    // Enhanced fallback scoring logic
-    let score = 50; // Base score
-    
-    // Contact information completeness (15 points max)
-    if (resume.personalInfo.fullName) score += 3;
-    if (resume.personalInfo.email) score += 3;
-    if (resume.personalInfo.phone) score += 3;
-    if (resume.personalInfo.location) score += 3;
-    if (resume.personalInfo.linkedin || resume.personalInfo.github) score += 3;
-    
-    // Professional summary (10 points max)
-    if (resume.personalInfo.summary) {
-      if (resume.personalInfo.summary.length > 100) score += 10;
-      else if (resume.personalInfo.summary.length > 50) score += 5;
-    }
-    
-    // Experience section (20 points max)
-    if (resume.experience.length > 0) {
-      score += Math.min(resume.experience.length * 5, 15);
-      
-      // Check for quantified achievements
-      const hasQuantifiedAchievements = resume.experience.some(exp =>
-        exp.achievements.some(achievement =>
-          /\d+/.test(achievement) || /%/.test(achievement) || /\$/.test(achievement)
-        )
-      );
-      if (hasQuantifiedAchievements) score += 5;
-    }
-    
-    // Skills section (10 points max)
-    if (resume.skills.length >= 5) score += 5;
-    if (resume.skills.length >= 10) score += 3;
-    const hasVariedSkills = new Set(resume.skills.map(s => s.category)).size >= 2;
-    if (hasVariedSkills) score += 2;
-    
-    // Education (5 points max)
-    if (resume.education.length > 0) score += 5;
-    
-    // Projects (5 points max)
-    if (resume.projects.length > 0) score += 3;
-    if (resume.projects.length >= 2) score += 2;
-    
-    const finalScore = Math.min(score, 100);
-    
-    return {
-      score: finalScore,
-      analysis: `Basic analysis complete (Score: ${finalScore}/100). This resume ${finalScore >= 70 ? 'shows good potential' : 'needs improvement'} for ATS compatibility. For detailed AI-powered insights with specific keyword analysis and industry-tailored suggestions, please add your OpenAI API key to unlock advanced features.`,
-      suggestions: [
-        "Add quantified achievements with specific numbers and percentages",
-        "Include more industry-relevant keywords from target job descriptions",
-        "Expand technical skills section with current technologies",
-        "Write a compelling professional summary highlighting key strengths",
-        "Ensure all contact information is complete and professional",
-        "Add relevant projects or certifications to strengthen your profile",
-        "Use action verbs to start each experience bullet point",
-        "Tailor content to match specific job requirements"
-      ].slice(0, 5),
-      keywords: [
-        "leadership", "project management", "communication", "problem-solving", "teamwork",
-        "data analysis", "process improvement", "customer service", "strategic planning", "collaboration",
-        "time management", "attention to detail", "adaptability", "innovation", "results-driven"
-      ]
-    };
   }
 }
 

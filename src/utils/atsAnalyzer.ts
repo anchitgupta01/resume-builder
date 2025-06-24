@@ -1,23 +1,9 @@
 import { Resume, ATSScore } from '../types/resume';
 import { openaiService } from './openaiService';
 
-const commonATSKeywords = [
-  'leadership', 'management', 'team', 'project', 'development', 'analysis',
-  'strategy', 'implementation', 'optimization', 'collaboration', 'communication',
-  'problem-solving', 'innovation', 'results', 'achievement', 'improvement',
-  'efficiency', 'quality', 'customer', 'client', 'stakeholder', 'budget',
-  'timeline', 'deadline', 'agile', 'scrum', 'methodology', 'framework'
-];
-
-const technicalKeywords = [
-  'javascript', 'python', 'java', 'react', 'node.js', 'sql', 'aws', 'azure',
-  'docker', 'kubernetes', 'git', 'api', 'database', 'cloud', 'machine learning',
-  'data analysis', 'artificial intelligence', 'cybersecurity', 'devops'
-];
-
 export async function analyzeATS(resume: Resume, jobDescription?: string): Promise<ATSScore> {
   try {
-    // Try to use OpenAI for enhanced analysis
+    // Always use OpenAI for ATS analysis
     const aiAnalysis = await openaiService.analyzeATSScore(resume, jobDescription);
     
     // Convert AI analysis to our ATSScore format
@@ -32,8 +18,8 @@ export async function analyzeATS(resume: Resume, jobDescription?: string): Promi
       ).slice(0, 10)
     };
   } catch (error) {
-    console.error('Error in AI ATS analysis, falling back to basic analysis:', error);
-    return performBasicAnalysis(resume, jobDescription);
+    console.error('Error in AI ATS analysis:', error);
+    throw error; // Propagate the error instead of falling back
   }
 }
 
@@ -69,47 +55,6 @@ function calculateBreakdown(resume: Resume, aiKeywords: string[], overallScore: 
   };
 }
 
-function performBasicAnalysis(resume: Resume, jobDescription?: string): ATSScore {
-  const resumeText = extractResumeText(resume).toLowerCase();
-  const jobKeywords = jobDescription ? extractJobKeywords(jobDescription) : [];
-  
-  // Keyword analysis
-  const foundKeywords = [...commonATSKeywords, ...technicalKeywords, ...jobKeywords]
-    .filter(keyword => resumeText.includes(keyword.toLowerCase()));
-  
-  const keywordScore = Math.min((foundKeywords.length / 20) * 100, 100);
-  
-  // Other scores
-  const formattingScore = analyzeFormatting(resume);
-  const experienceScore = analyzeExperience(resume);
-  const educationScore = analyzeEducation(resume);
-  const skillsScore = analyzeSkills(resume);
-  
-  const overall = Math.round(
-    (keywordScore * 0.3 + formattingScore * 0.2 + experienceScore * 0.25 + 
-     educationScore * 0.1 + skillsScore * 0.15)
-  );
-  
-  const missingKeywords = [...commonATSKeywords, ...technicalKeywords, ...jobKeywords]
-    .filter(keyword => !resumeText.includes(keyword.toLowerCase()))
-    .slice(0, 10);
-  
-  const suggestions = generateBasicSuggestions(resume, overall);
-  
-  return {
-    overall,
-    breakdown: {
-      keywords: Math.round(keywordScore),
-      formatting: Math.round(formattingScore),
-      experience: Math.round(experienceScore),
-      education: Math.round(educationScore),
-      skills: Math.round(skillsScore)
-    },
-    suggestions,
-    missingKeywords
-  };
-}
-
 function extractResumeText(resume: Resume): string {
   const text = [
     resume.personalInfo.summary,
@@ -120,23 +65,6 @@ function extractResumeText(resume: Resume): string {
   ].join(' ');
   
   return text;
-}
-
-function extractJobKeywords(jobDescription: string): string[] {
-  const words = jobDescription.toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .split(/\s+/)
-    .filter(word => word.length > 3);
-  
-  const frequency: { [key: string]: number } = {};
-  words.forEach(word => {
-    frequency[word] = (frequency[word] || 0) + 1;
-  });
-  
-  return Object.entries(frequency)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 15)
-    .map(([word]) => word);
 }
 
 function analyzeFormatting(resume: Resume): number {
@@ -208,41 +136,4 @@ function analyzeSkills(resume: Resume): number {
   if (hasTechnicalSkills) score += 20;
   
   return Math.min(score, 100);
-}
-
-function generateBasicSuggestions(resume: Resume, overallScore: number): string[] {
-  const suggestions: string[] = [];
-  
-  if (overallScore < 70) {
-    suggestions.push("Add more relevant keywords from the job description");
-    suggestions.push("Quantify your achievements with specific numbers and metrics");
-  }
-  
-  if (resume.experience.length < 2) {
-    suggestions.push("Include more work experience or relevant projects");
-  }
-  
-  if (resume.skills.length < 5) {
-    suggestions.push("Add more relevant skills, especially technical ones");
-  }
-  
-  if (!resume.personalInfo.summary || resume.personalInfo.summary.length < 50) {
-    suggestions.push("Write a compelling professional summary (2-3 sentences)");
-  }
-  
-  const hasQuantifiedAchievements = resume.experience.some(exp =>
-    exp.achievements.some(achievement =>
-      /\d+/.test(achievement) || /%/.test(achievement) || /\$/.test(achievement)
-    )
-  );
-  
-  if (!hasQuantifiedAchievements) {
-    suggestions.push("Add quantified achievements (e.g., 'Increased sales by 25%')");
-  }
-  
-  if (resume.projects.length === 0) {
-    suggestions.push("Include relevant projects to showcase your skills");
-  }
-  
-  return suggestions.slice(0, 5);
 }
