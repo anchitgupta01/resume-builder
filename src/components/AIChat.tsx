@@ -15,7 +15,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
     {
       id: '1',
       type: 'assistant',
-      content: "Hi! I'm your AI resume assistant powered by OpenAI. I can help you:\n\n🔧 **Fix & Optimize Your Resume** - I can automatically improve your resume to increase ATS scores\n📝 **Write Better Content** - Professional summaries, achievement statements, and descriptions\n🎯 **ATS Optimization** - Keyword integration and formatting for applicant tracking systems\n📊 **Analyze & Score** - Detailed analysis with specific improvement recommendations\n🎨 **Template Guidance** - Help customize professional templates to your experience\n\nJust ask me to \"fix my resume\" or ask any specific question about improving your resume!",
+      content: "Hi! I'm your AI resume assistant powered by OpenAI. I can help you:\n\n🔧 **Fix & Optimize Your Resume** - I can automatically improve your resume to increase ATS scores\n\n📝 **Write Better Content** - Professional summaries, achievement statements, and descriptions\n\n🎯 **ATS Optimization** - Keyword integration and formatting for applicant tracking systems\n\n📊 **Analyze & Score** - Detailed analysis with specific improvement recommendations\n\n🎨 **Template Guidance** - Help customize professional templates to your experience\n\nJust ask me to \"fix my resume\" or ask any specific question about improving your resume!",
       timestamp: new Date()
     }
   ]);
