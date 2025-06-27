@@ -3,17 +3,14 @@ import { Header } from './components/Header';
 import { ResumeBuilder } from './components/ResumeBuilder';
 import { AIChat } from './components/AIChat';
 import { ResumePreview } from './components/ResumePreview';
-import { ResumeManager } from './components/ResumeManager';
 import { AuthModal } from './components/auth/AuthModal';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { useResumes } from './hooks/useResumes';
 import { Resume } from './types/resume';
 import { Loader } from 'lucide-react';
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState<'manager' | 'builder' | 'chat' | 'preview'>('manager');
-  const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'builder' | 'chat' | 'preview'>('builder');
   const [resume, setResume] = useState<Resume>({
     personalInfo: {
       fullName: '',
@@ -34,63 +31,9 @@ function AppContent() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
   const { user, loading: authLoading } = useAuth();
-  const { updateResume, saveResume } = useResumes();
 
-  // Auto-save functionality
-  useEffect(() => {
-    if (!user || !currentResumeId) return;
-
-    const autoSave = async () => {
-      try {
-        await updateResume(currentResumeId, resume);
-      } catch (error) {
-        console.error('Auto-save failed:', error);
-      }
-    };
-
-    const timeoutId = setTimeout(autoSave, 2000); // Auto-save after 2 seconds of inactivity
-    return () => clearTimeout(timeoutId);
-  }, [resume, currentResumeId, user, updateResume]);
-
-  const handleSelectResume = (resumeData: Resume, resumeId?: string) => {
-    setResume(resumeData);
-    setCurrentResumeId(resumeId || null);
-    setActiveTab('builder');
-  };
-
-  const handleCreateNew = () => {
-    setResume({
-      personalInfo: {
-        fullName: '',
-        email: '',
-        phone: '',
-        location: '',
-        linkedin: '',
-        github: '',
-        website: '',
-        summary: ''
-      },
-      experience: [],
-      education: [],
-      skills: [],
-      projects: []
-    });
-    setCurrentResumeId(null);
-    setActiveTab('builder');
-  };
-
-  const handleResumeChange = async (newResume: Resume) => {
+  const handleResumeChange = (newResume: Resume) => {
     setResume(newResume);
-    
-    // If this is a new resume (no ID), save it
-    if (!currentResumeId && user) {
-      try {
-        const savedResume = await saveResume(newResume);
-        setCurrentResumeId(savedResume.id);
-      } catch (error) {
-        console.error('Failed to save new resume:', error);
-      }
-    }
   };
 
   const handleSignIn = () => {
@@ -179,22 +122,13 @@ function AppContent() {
       <Header 
         activeTab={activeTab} 
         onTabChange={setActiveTab}
-        showResumeManager={true}
       />
       
       <main className="flex-1 py-4 sm:py-6 lg:py-8">
-        {activeTab === 'manager' && (
-          <ResumeManager
-            onSelectResume={handleSelectResume}
-            onCreateNew={handleCreateNew}
-          />
-        )}
-        
         {activeTab === 'builder' && (
           <ResumeBuilder 
             resume={resume} 
             onResumeChange={handleResumeChange}
-            resumeId={currentResumeId}
           />
         )}
         
@@ -210,7 +144,6 @@ function AppContent() {
         {activeTab === 'preview' && (
           <ResumePreview 
             resume={resume}
-            resumeId={currentResumeId}
           />
         )}
       </main>

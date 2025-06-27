@@ -100,7 +100,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
       <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
         {/* ATS Score Panel */}
         <div className="lg:col-span-1 order-2 lg:order-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 lg:sticky lg:top-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 lg:sticky lg:top-6">
             {/* Mobile Collapsible Header */}
             <div className="lg:hidden">
               <button
@@ -108,10 +108,10 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                 className="w-full p-4 flex items-center justify-between text-left"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-blue-600" />
+                  <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">ATS Score</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">ATS Score</h3>
                   {atsScore && (
                     <span className={`text-lg font-bold ${getScoreColor(atsScore.overall)}`}>
                       {atsScore.overall}
@@ -127,17 +127,17 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
             </div>
 
             {/* Desktop Header */}
-            <div className="hidden lg:flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="hidden lg:flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">ATS Score</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">ATS Score</h3>
               </div>
               {hasApiKey && (
                 <button
                   onClick={() => setShowJobDescInput(!showJobDescInput)}
-                  className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                   title="Analyze against job description"
                 >
                   <Settings className="h-4 w-4" />
@@ -149,12 +149,12 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
             <div className={`${isScorePanelCollapsed ? 'hidden' : 'block'} lg:block p-4 sm:p-6`}>
               {/* API Key Required Notice */}
               {!hasApiKey && (
-                <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                   <div className="flex items-center space-x-3">
-                    <Key className="h-5 w-5 text-amber-600" />
+                    <Key className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                     <div>
-                      <h4 className="font-medium text-amber-900">OpenAI API Key Required</h4>
-                      <p className="text-sm text-amber-700 mt-1">
+                      <h4 className="font-medium text-amber-900 dark:text-amber-100">OpenAI API Key Required</h4>
+                      <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
                         Add your OpenAI API key to enable AI-powered ATS analysis with personalized insights and recommendations.
                       </p>
                     </div>
@@ -164,15 +164,15 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
 
               {/* Job Description Input */}
               {showJobDescInput && hasApiKey && (
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Job Description (Optional)
                   </label>
                   <textarea
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste the job description here for targeted analysis..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     rows={4}
                   />
                   <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-3">
@@ -185,7 +185,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                     </button>
                     <button
                       onClick={() => setShowJobDescInput(false)}
-                      className="flex-1 px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+                      className="flex-1 px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded hover:bg-gray-400 dark:hover:bg-gray-500"
                     >
                       Cancel
                     </button>
@@ -195,12 +195,12 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
 
               {/* Analysis Error */}
               {analysisError && (
-                <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                   <div className="flex items-center space-x-3">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                     <div>
-                      <h4 className="font-medium text-red-900">Analysis Error</h4>
-                      <p className="text-sm text-red-700 mt-1">{analysisError}</p>
+                      <h4 className="font-medium text-red-900 dark:text-red-100">Analysis Error</h4>
+                      <p className="text-sm text-red-700 dark:text-red-300 mt-1">{analysisError}</p>
                     </div>
                   </div>
                 </div>
@@ -209,8 +209,8 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
               {/* Loading State */}
               {isAnalyzing && (
                 <div className="mb-6 text-center">
-                  <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-                  <p className="text-gray-600">AI is analyzing your resume...</p>
+                  <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600 dark:text-blue-400" />
+                  <p className="text-gray-600 dark:text-gray-400">AI is analyzing your resume...</p>
                 </div>
               )}
 
@@ -224,22 +224,22 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                         {atsScore.overall}
                       </span>
                     </div>
-                    <p className="text-gray-600 text-sm sm:text-base">Overall ATS Compatibility</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Overall ATS Compatibility</p>
                     {jobDescription && (
-                      <p className="text-xs text-blue-600 mt-1">Analyzed against job description</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Analyzed against job description</p>
                     )}
                   </div>
 
                   {/* Score Breakdown */}
                   <div className="space-y-3 sm:space-y-4 mb-6">
-                    <h4 className="font-medium text-gray-900">Score Breakdown</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Score Breakdown</h4>
                     {Object.entries(atsScore.breakdown).map(([category, score]) => (
                       <div key={category} className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 capitalize">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
                           {category === 'keywords' ? 'Keywords' : category}
                         </span>
                         <div className="flex items-center space-x-2">
-                          <div className="w-12 sm:w-16 bg-gray-200 rounded-full h-2">
+                          <div className="w-12 sm:w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                             <div
                               className={`h-2 rounded-full ${
                                 score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
@@ -257,13 +257,13 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
 
                   {/* Suggestions */}
                   <div className="mb-6">
-                    <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
                       <AlertCircle className="h-4 w-4 mr-2 text-orange-500" />
                       AI Suggestions
                     </h4>
                     <ul className="space-y-2">
                       {atsScore.suggestions.map((suggestion, index) => (
-                        <li key={index} className="text-sm text-gray-600 flex items-start">
+                        <li key={index} className="text-sm text-gray-600 dark:text-gray-400 flex items-start">
                           <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0" />
                           {suggestion}
                         </li>
@@ -274,12 +274,12 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                   {/* Missing Keywords */}
                   {atsScore.missingKeywords.length > 0 && (
                     <div className="mb-6">
-                      <h4 className="font-medium text-gray-900 mb-3">Consider Adding Keywords</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-3">Consider Adding Keywords</h4>
                       <div className="flex flex-wrap gap-2">
                         {atsScore.missingKeywords.slice(0, 8).map((keyword, index) => (
                           <span
                             key={index}
-                            className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                            className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded-full"
                           >
                             {keyword}
                           </span>
@@ -293,7 +293,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                     <button
                       onClick={analyzeResume}
                       disabled={isAnalyzing}
-                      className="w-full mb-3 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                      className="w-full mb-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
                     >
                       {isAnalyzing ? (
                         <>
@@ -325,11 +325,11 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
 
         {/* Resume Preview */}
         <div className="lg:col-span-2 order-1 lg:order-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 sm:p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
-                <FileText className="h-5 w-5 text-gray-600" />
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Resume Preview</h3>
+                <FileText className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Resume Preview</h3>
               </div>
             </div>
 

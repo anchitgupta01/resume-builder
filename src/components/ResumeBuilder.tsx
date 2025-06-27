@@ -7,25 +7,18 @@ import { ProjectsForm } from './forms/ProjectsForm';
 import { TemplateSelector } from './TemplateSelector';
 import { PDFUploader } from './PDFUploader';
 import { Resume } from '../types/resume';
-import { FileText, Sparkles, Edit3, Info, Upload, CheckCircle, Save, Loader } from 'lucide-react';
-import { useResumes } from '../hooks/useResumes';
-import { useAuth } from '../contexts/AuthContext';
+import { FileText, Sparkles, Edit3, Info, Upload, CheckCircle } from 'lucide-react';
 
 interface ResumeBuilderProps {
   resume: Resume;
   onResumeChange: (resume: Resume) => void;
-  resumeId?: string | null;
 }
 
-export function ResumeBuilder({ resume, onResumeChange, resumeId }: ResumeBuilderProps) {
+export function ResumeBuilder({ resume, onResumeChange }: ResumeBuilderProps) {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showPDFUploader, setShowPDFUploader] = useState(false);
   const [showTemplateInfo, setShowTemplateInfo] = useState(false);
   const [showUploadSuccess, setShowUploadSuccess] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const { saveResume, updateResume } = useResumes();
-  const { user } = useAuth();
 
   const handleTemplateSelect = (templateData: Resume) => {
     onResumeChange(templateData);
@@ -39,24 +32,6 @@ export function ResumeBuilder({ resume, onResumeChange, resumeId }: ResumeBuilde
     setShowUploadSuccess(true);
     // Auto-hide the success message after 5 seconds
     setTimeout(() => setShowUploadSuccess(false), 5000);
-  };
-
-  const handleManualSave = async () => {
-    if (!user) return;
-
-    try {
-      setSaving(true);
-      if (resumeId) {
-        await updateResume(resumeId, resume);
-      } else {
-        await saveResume(resume);
-      }
-    } catch (error) {
-      console.error('Failed to save resume:', error);
-      alert('Failed to save resume. Please try again.');
-    } finally {
-      setSaving(false);
-    }
   };
 
   const isResumeEmpty = () => {
@@ -80,36 +55,13 @@ export function ResumeBuilder({ resume, onResumeChange, resumeId }: ResumeBuilde
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
       <div className="text-center mb-6 sm:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Build Your Resume
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-              Fill out each section to create a professional, ATS-optimized resume
-            </p>
-          </div>
-          
-          {/* Manual Save Button */}
-          {user && (
-            <button
-              onClick={handleManualSave}
-              disabled={saving}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
-            >
-              {saving ? (
-                <>
-                  <Loader className="h-4 w-4 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  <span>Save</span>
-                </>
-              )}
-            </button>
-          )}
+        <div className="mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Build Your Resume
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+            Fill out each section to create a professional, ATS-optimized resume
+          </p>
         </div>
 
         {/* Template Info Banner */}

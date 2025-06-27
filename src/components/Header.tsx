@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
-import { FileText, Zap, MessageCircle, Menu, X, Moon, Sun, FolderOpen } from 'lucide-react';
+import { FileText, Zap, MessageCircle, Menu, X, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { UserMenu } from './auth/UserMenu';
 
 interface HeaderProps {
-  activeTab: 'manager' | 'builder' | 'chat' | 'preview';
-  onTabChange: (tab: 'manager' | 'builder' | 'chat' | 'preview') => void;
-  showResumeManager?: boolean;
+  activeTab: 'builder' | 'chat' | 'preview';
+  onTabChange: (tab: 'builder' | 'chat' | 'preview') => void;
 }
 
-export function Header({ activeTab, onTabChange, showResumeManager = false }: HeaderProps) {
+export function Header({ activeTab, onTabChange }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   const tabs = [
-    ...(showResumeManager ? [{ id: 'manager', label: 'My Resumes', icon: FolderOpen }] : []),
     { id: 'builder', label: 'Builder', icon: FileText },
     { id: 'chat', label: 'AI Assistant', icon: MessageCircle },
     { id: 'preview', label: 'Preview & ATS', icon: Zap }
@@ -54,8 +52,7 @@ export function Header({ activeTab, onTabChange, showResumeManager = false }: He
                 <Icon className="h-4 w-4" />
                 <span className="hidden lg:inline">{label}</span>
                 <span className="lg:hidden">
-                  {id === 'manager' ? 'Resumes' : 
-                   id === 'builder' ? 'Build' : 
+                  {id === 'builder' ? 'Build' : 
                    id === 'chat' ? 'AI' : 'Preview'}
                 </span>
               </button>
