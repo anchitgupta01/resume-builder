@@ -34,6 +34,8 @@ class OpenAIService {
             role: 'system',
             content: `You are a professional resume advisor and career coach. You help people improve their resumes to be more effective and ATS-friendly. 
 
+You can provide advice and suggestions, but you CANNOT directly modify the resume. When users ask you to make changes like "remove Python from skills" or "add experience", explain that they need to make those changes manually in the Builder tab.
+
 Provide specific, actionable advice based on the user's current resume content. Focus on:
 - Improving content quality and impact
 - ATS optimization
@@ -42,7 +44,9 @@ Provide specific, actionable advice based on the user's current resume content. 
 - Quantifying achievements
 - Using strong action verbs
 
-Be encouraging but honest about areas for improvement. Provide concrete examples when possible.`
+Be encouraging but honest about areas for improvement. Provide concrete examples when possible.
+
+If users ask you to make direct changes, politely explain that they need to use the Builder tab to make those modifications, and provide guidance on how to do it.`
           },
           {
             role: 'user',
@@ -64,6 +68,164 @@ Question: ${question}`
         throw new Error('Invalid OpenAI API key. Please check your configuration.');
       }
       throw new Error('Failed to generate AI response. Please try again.');
+    }
+  }
+
+  async processResumeModification(instruction: string, resume: Resume): Promise<{
+    modifiedResume: Resume;
+    changes: string[];
+  }> {
+    if (!this.isConfigured()) {
+      throw new Error('OpenAI API key is required for AI-powered resume modification. Please configure your API key to enable this feature.');
+    }
+
+    try {
+      const resumeContext = this.formatResumeForContext(resume);
+      
+      const completion = await this.openai!.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI resume editor. You can make specific modifications to resumes based on user instructions.
+
+CRITICAL: You must return a valid JSON object with the following structure:
+{
+  "modifiedResume": {
+    "personalInfo": {
+      "fullName": "string",
+      "email": "string", 
+      "phone": "string",
+      "location": "string",
+      "linkedin": "string",
+      "github": "string", 
+      "website": "string",
+      "summary": "string"
+    },
+    "experience": [
+      {
+        "id": "string",
+        "company": "string",
+        "position": "string", 
+        "startDate": "string",
+        "endDate": "string",
+        "current": boolean,
+        "description": ["string"],
+        "achievements": ["string"]
+      }
+    ],
+    "education": [
+      {
+        "id": "string",
+        "institution": "string",
+        "degree": "string",
+        "field": "string", 
+        "graduationDate": "string",
+        "gpa": "string",
+        "honors": ["string"]
+      }
+    ],
+    "skills": [
+      {
+        "id": "string",
+        "name": "string",
+        "category": "technical|soft|language|certification",
+        "proficiency": "beginner|intermediate|advanced|expert"
+      }
+    ],
+    "projects": [
+      {
+        "id": "string",
+        "name": "string",
+        "description": "string",
+        "technologies": ["string"],
+        "link": "string",
+        "github": "string"
+      }
+    ]
+  },
+  "changes": ["string"]
+}
+
+Follow the user's instruction exactly. For example:
+- If they say "remove Python from skills", remove any skill with name "Python"
+- If they say "add JavaScript skill", add it to the skills array
+- If they say "update my summary", modify the summary field
+- If they say "remove my last job", remove the most recent experience
+
+Keep all existing IDs and only modify what was specifically requested.`
+          },
+          {
+            role: 'user',
+            content: `Please modify this resume according to the instruction: "${instruction}"
+
+Current resume:
+${resumeContext}
+
+Return only the JSON object with the modified resume and list of changes made.`
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.1
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error('No response from AI service');
+      }
+
+      try {
+        const result = JSON.parse(response);
+        
+        // Validate the response structure
+        if (!result.modifiedResume || !result.changes) {
+          throw new Error('Invalid response structure from AI');
+        }
+
+        // Ensure IDs are preserved or generated
+        if (result.modifiedResume.experience) {
+          result.modifiedResume.experience = result.modifiedResume.experience.map((exp: any, index: number) => ({
+            ...exp,
+            id: exp.id || `exp_${Date.now()}_${index}`
+          }));
+        }
+
+        if (result.modifiedResume.education) {
+          result.modifiedResume.education = result.modifiedResume.education.map((edu: any, index: number) => ({
+            ...edu,
+            id: edu.id || `edu_${Date.now()}_${index}`
+          }));
+        }
+
+        if (result.modifiedResume.skills) {
+          result.modifiedResume.skills = result.modifiedResume.skills.map((skill: any, index: number) => ({
+            ...skill,
+            id: skill.id || `skill_${Date.now()}_${index}`
+          }));
+        }
+
+        if (result.modifiedResume.projects) {
+          result.modifiedResume.projects = result.modifiedResume.projects.map((project: any, index: number) => ({
+            ...project,
+            id: project.id || `project_${Date.now()}_${index}`
+          }));
+        }
+
+        return {
+          modifiedResume: result.modifiedResume,
+          changes: result.changes
+        };
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', parseError);
+        console.error('Raw response:', response);
+        throw new Error('Failed to parse AI response. Please try again.');
+      }
+    } catch (error) {
+      console.error('OpenAI API Error:', error);
+      if (error instanceof Error && error.message.includes('API key')) {
+        throw new Error('Invalid OpenAI API key. Please check your configuration.');
+      }
+      throw error;
     }
   }
 

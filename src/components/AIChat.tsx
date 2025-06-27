@@ -15,13 +15,13 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
     {
       id: '1',
       type: 'assistant',
-      content: "Hi! I'm your AI resume assistant powered by OpenAI. I can help you:\n\n🔧 **Fix & Optimize Your Resume** - I can automatically improve your resume to increase ATS scores\n\n📝 **Write Better Content** - Professional summaries, achievement statements, and descriptions\n\n🎯 **ATS Optimization** - Keyword integration and formatting for applicant tracking systems\n\n📊 **Analyze & Score** - Detailed analysis with specific improvement recommendations\n\n🎨 **Template Guidance** - Help customize professional templates to your experience\n\nJust ask me to \"fix my resume\" or ask any specific question about improving your resume!",
+      content: "Hi! I'm your AI resume assistant powered by OpenAI. I can help you:\n\n🔧 **Fix & Optimize Your Resume** - I can automatically improve your resume to increase ATS scores\n\n📝 **Make Specific Changes** - Remove skills, update sections, modify content\n\n🎯 **ATS Optimization** - Keyword integration and formatting for applicant tracking systems\n\n📊 **Analyze & Score** - Detailed analysis with specific improvement recommendations\n\n🎨 **Template Guidance** - Help customize professional templates to your experience\n\nTry asking me to:\n• \"Remove Python from my skills\"\n• \"Fix my resume\"\n• \"Add JavaScript to my skills\"\n• \"Update my professional summary\"",
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isFixingResume, setIsFixingResume] = useState(false);
+  const [isModifyingResume, setIsModifyingResume] = useState(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -33,22 +33,20 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
     scrollToBottom();
   }, [messages]);
 
-  const detectResumeFixRequest = (message: string): boolean => {
-    const fixKeywords = [
-      'fix my resume', 'improve my resume', 'optimize my resume', 'fix resume',
-      'improve resume', 'optimize resume', 'make my resume better', 'enhance my resume',
-      'increase ats score', 'improve ats score', 'optimize for ats', 'fix ats',
-      'make resume ats friendly', 'improve resume score', 'update my resume',
-      'enhance resume', 'better resume', 'optimize resume'
+  const detectResumeModificationRequest = (message: string): boolean => {
+    const modificationKeywords = [
+      'remove', 'delete', 'add', 'update', 'change', 'modify', 'edit',
+      'fix my resume', 'improve my resume', 'optimize my resume',
+      'take out', 'get rid of', 'include', 'insert', 'replace'
     ];
     
-    return fixKeywords.some(keyword => 
+    return modificationKeywords.some(keyword => 
       message.toLowerCase().includes(keyword.toLowerCase())
     );
   };
 
-  const handleResumeFixing = async (userMessage: string) => {
-    console.log('🔧 AI Chat: Starting resume fixing process');
+  const handleResumeModification = async (userMessage: string) => {
+    console.log('🔧 AI Chat: Starting resume modification process');
     console.log('🔧 AI Chat: onResumeChange available:', !!onResumeChange);
     
     if (!onResumeChange) {
@@ -63,7 +61,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       return;
     }
 
-    setIsFixingResume(true);
+    setIsModifyingResume(true);
     
     try {
       console.log('🔧 AI Chat: Adding user message');
@@ -81,64 +79,94 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       const processingMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: "🔧 **Analyzing and fixing your resume...**\n\nI'm applying AI-powered optimizations to:\n• Professional summary enhancement\n• Experience achievement quantification\n• Skills optimization\n• Keyword integration\n• ATS compatibility improvements\n\nThis will take a moment...",
+        content: "🔧 **Processing your request...**\n\nI'm analyzing your instruction and making the requested changes to your resume.\n\nThis will take a moment...",
         timestamp: new Date()
       };
       setMessages(prev => [...prev, processingMsg]);
 
-      console.log('🔧 AI Chat: Calling OpenAI service to fix resume');
+      console.log('🔧 AI Chat: Calling OpenAI service to modify resume');
       console.log('🔧 AI Chat: Current resume data:', resume);
+      console.log('🔧 AI Chat: User instruction:', userMessage);
       
-      // Call the resume fixing service
-      const fixResult = await openaiService.fixResumeForATS(resume);
-      
-      console.log('🔧 AI Chat: Received fix result:', fixResult);
-      console.log('🔧 AI Chat: Applying improvements to resume');
-      
-      // Apply the improvements to the resume
-      onResumeChange(fixResult.improvedResume);
+      // Check if this is a general "fix resume" request or specific modification
+      if (userMessage.toLowerCase().includes('fix my resume') || 
+          userMessage.toLowerCase().includes('improve my resume') ||
+          userMessage.toLowerCase().includes('optimize my resume')) {
+        
+        // Use the existing fix resume function
+        const fixResult = await openaiService.fixResumeForATS(resume);
+        
+        console.log('🔧 AI Chat: Received fix result:', fixResult);
+        console.log('🔧 AI Chat: Applying improvements to resume');
+        
+        // Apply the improvements to the resume
+        onResumeChange(fixResult.improvedResume);
 
-      console.log('🔧 AI Chat: Resume updated successfully');
+        console.log('🔧 AI Chat: Resume updated successfully');
 
-      // Create success message
-      const successMsg: ChatMessage = {
-        id: (Date.now() + 2).toString(),
-        type: 'assistant',
-        content: `✅ **Resume Successfully Optimized!**\n\n**Improvements Applied:**\n${fixResult.improvements.map(improvement => `• ${improvement}`).join('\n')}\n\n**Expected ATS Score Increase:** +${fixResult.expectedScoreIncrease} points\n\n🎯 **What's Changed:**\nYour resume has been automatically updated with optimized content. Check the Builder and Preview tabs to see the improvements!\n\n💡 **Next Steps:**\n• Review the changes in the Builder tab\n• Check your new ATS score in the Preview tab\n• Make any additional personal adjustments\n• Download your improved resume\n\nWould you like me to explain any specific improvements or help with additional optimizations?`,
-        timestamp: new Date()
-      };
+        // Create success message
+        const successMsg: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'assistant',
+          content: `✅ **Resume Successfully Optimized!**\n\n**Improvements Applied:**\n${fixResult.improvements.map(improvement => `• ${improvement}`).join('\n')}\n\n**Expected ATS Score Increase:** +${fixResult.expectedScoreIncrease} points\n\n🎯 **What's Changed:**\nYour resume has been automatically updated with optimized content. Check the Builder and Preview tabs to see the improvements!\n\n💡 **Next Steps:**\n• Review the changes in the Builder tab\n• Check your new ATS score in the Preview tab\n• Make any additional personal adjustments\n• Download your improved resume\n\nWould you like me to explain any specific improvements or help with additional optimizations?`,
+          timestamp: new Date()
+        };
 
-      // Remove processing message and add success message
-      setMessages(prev => prev.slice(0, -1).concat(successMsg));
+        // Remove processing message and add success message
+        setMessages(prev => prev.slice(0, -1).concat(successMsg));
+        
+      } else {
+        // Use the new specific modification function
+        const modificationResult = await openaiService.processResumeModification(userMessage, resume);
+        
+        console.log('🔧 AI Chat: Received modification result:', modificationResult);
+        console.log('🔧 AI Chat: Applying changes to resume');
+        
+        // Apply the changes to the resume
+        onResumeChange(modificationResult.modifiedResume);
 
-      console.log('✅ AI Chat: Resume fixing completed successfully');
+        console.log('🔧 AI Chat: Resume modified successfully');
+
+        // Create success message
+        const successMsg: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'assistant',
+          content: `✅ **Resume Successfully Modified!**\n\n**Changes Made:**\n${modificationResult.changes.map(change => `• ${change}`).join('\n')}\n\n🎯 **What's Changed:**\nYour resume has been updated according to your request. Check the Builder and Preview tabs to see the changes!\n\n💡 **Next Steps:**\n• Review the changes in the Builder tab\n• Check your updated ATS score in the Preview tab\n• Make any additional adjustments if needed\n\nIs there anything else you'd like me to modify?`,
+          timestamp: new Date()
+        };
+
+        // Remove processing message and add success message
+        setMessages(prev => prev.slice(0, -1).concat(successMsg));
+      }
+
+      console.log('✅ AI Chat: Resume modification completed successfully');
 
     } catch (error) {
-      console.error('❌ AI Chat: Error fixing resume:', error);
+      console.error('❌ AI Chat: Error modifying resume:', error);
       
       const errorMsg: ChatMessage = {
         id: (Date.now() + 3).toString(),
         type: 'assistant',
-        content: `❌ **Resume Fixing Error**\n\n${error instanceof Error ? error.message : 'An error occurred while fixing your resume.'}\n\nPlease ensure your OpenAI API key is configured correctly, or try asking me specific questions about improving individual sections of your resume.`,
+        content: `❌ **Resume Modification Error**\n\n${error instanceof Error ? error.message : 'An error occurred while modifying your resume.'}\n\nPlease ensure your OpenAI API key is configured correctly, or try asking me specific questions about improving individual sections of your resume.`,
         timestamp: new Date()
       };
 
       // Remove processing message and add error message
       setMessages(prev => prev.slice(0, -1).concat(errorMsg));
     } finally {
-      setIsFixingResume(false);
+      setIsModifyingResume(false);
     }
   };
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading || isFixingResume) return;
+    if (!inputMessage.trim() || isLoading || isModifyingResume) return;
 
     console.log('💬 AI Chat: Sending message:', inputMessage);
 
-    // Check if this is a resume fixing request
-    if (detectResumeFixRequest(inputMessage)) {
-      console.log('🔧 AI Chat: Detected resume fix request');
-      await handleResumeFixing(inputMessage);
+    // Check if this is a resume modification request
+    if (detectResumeModificationRequest(inputMessage)) {
+      console.log('🔧 AI Chat: Detected resume modification request');
+      await handleResumeModification(inputMessage);
       setInputMessage('');
       return;
     }
@@ -192,11 +220,11 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
 
   const quickQuestions = [
     "Fix my resume and increase ATS score",
-    "How can I improve my professional summary?",
-    "Help me write better achievement statements",
+    "Remove Python from my skills",
+    "Add JavaScript to my skills",
+    "Update my professional summary",
+    "How can I improve my experience section?",
     "What keywords should I include for ATS?",
-    "How can I make my experience more impactful?",
-    "What projects should I add to my resume?",
     "Show me professional resume templates",
     "How do I quantify my achievements?"
   ];
@@ -217,9 +245,9 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       };
       
       setMessages(prev => [...prev, templateMessage]);
-    } else if (question === "Fix my resume and increase ATS score") {
-      console.log('🔧 AI Chat: Quick fix request triggered');
-      handleResumeFixing(question);
+    } else if (detectResumeModificationRequest(question)) {
+      console.log('🔧 AI Chat: Quick modification request triggered');
+      handleResumeModification(question);
     } else {
       setInputMessage(question);
     }
@@ -280,7 +308,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">OpenAI API Configuration</h4>
               <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                To enable AI-powered features including automatic resume fixing, add your OpenAI API key:
+                To enable AI-powered features including automatic resume modification, add your OpenAI API key:
               </p>
               <div className="bg-blue-100 dark:bg-blue-800 p-3 rounded font-mono text-sm text-blue-800 dark:text-blue-200 break-all">
                 VITE_OPENAI_API_KEY=your_api_key_here
@@ -398,7 +426,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
             </div>
           ))}
           
-          {(isLoading || isFixingResume) && (
+          {(isLoading || isModifyingResume) && (
             <div className="flex justify-start">
               <div className="max-w-[85%] sm:max-w-3xl flex space-x-2 sm:space-x-3">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white flex items-center justify-center">
@@ -408,7 +436,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                   <div className="flex items-center space-x-2">
                     <Loader className="h-4 w-4 animate-spin" />
                     <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-                      {isFixingResume ? 'AI is fixing your resume...' : 'AI is analyzing and responding...'}
+                      {isModifyingResume ? 'AI is modifying your resume...' : 'AI is analyzing and responding...'}
                     </span>
                   </div>
                 </div>
@@ -431,14 +459,14 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                 <button
                   key={index}
                   onClick={() => handleQuickQuestion(question)}
-                  disabled={(!hasApiKey || !canModifyResume) && question.includes('Fix my resume')}
+                  disabled={(!hasApiKey || !canModifyResume) && detectResumeModificationRequest(question)}
                   className={`px-3 py-2 text-sm rounded-lg transition-colors text-left flex items-center space-x-2 ${
-                    question.includes('Fix my resume') 
+                    detectResumeModificationRequest(question)
                       ? 'bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-200 hover:to-blue-200 dark:hover:from-purple-800/30 dark:hover:to-blue-800/30 text-purple-800 dark:text-purple-300 font-medium'
                       : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
-                  } ${(!hasApiKey || !canModifyResume) && question.includes('Fix my resume') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${(!hasApiKey || !canModifyResume) && detectResumeModificationRequest(question) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {question.includes('Fix my resume') && <Zap className="h-4 w-4" />}
+                  {detectResumeModificationRequest(question) && <Zap className="h-4 w-4" />}
                   {question.includes('ATS') && <TrendingUp className="h-4 w-4" />}
                   <span>{question}</span>
                 </button>
@@ -459,15 +487,15 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                   ? "Configure OpenAI API key to enable AI features..." 
                   : !canModifyResume
                   ? "Ask me questions about resume improvement (modification not available)..."
-                  : "Ask me to fix your resume or any question about improving it..."
+                  : "Ask me to modify your resume or any question about improving it..."
               }
               className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               rows={2}
-              disabled={isLoading || isFixingResume || !hasApiKey}
+              disabled={isLoading || isModifyingResume || !hasApiKey}
             />
             <button
               onClick={sendMessage}
-              disabled={!inputMessage.trim() || isLoading || isFixingResume || !hasApiKey}
+              disabled={!inputMessage.trim() || isLoading || isModifyingResume || !hasApiKey}
               className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start"
             >
               <Send className="h-4 w-4" />
@@ -477,7 +505,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
           
           {!hasApiKey && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              💡 Add your OpenAI API key to unlock AI-powered resume fixing and analysis
+              💡 Add your OpenAI API key to unlock AI-powered resume modification and analysis
             </p>
           )}
           
