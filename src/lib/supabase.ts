@@ -164,10 +164,15 @@ export const db = {
     track: async (event: string, details?: any) => {
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Only track analytics for authenticated users to comply with RLS policy
+      if (!user?.id) {
+        return { error: null }; // Return success for unauthenticated users without tracking
+      }
+      
       const { error } = await supabase
         .from('analytics')
         .insert({
-          user_id: user?.id,
+          user_id: user.id,
           event,
           details,
         });
