@@ -54,20 +54,14 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
             My Resumes
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Loading your saved resumes from database...
+            Manage your saved resumes and create new ones
           </p>
         </div>
         
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="relative">
-              <Database className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-              <Loader className="h-6 w-6 animate-spin absolute top-0 right-0 text-blue-600 dark:text-blue-400" />
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 font-medium">Connecting to Supabase...</p>
-            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-              Fetching your resumes from the database
-            </p>
+            <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600 dark:text-blue-400" />
+            <p className="text-gray-600 dark:text-gray-400 font-medium">Loading your resumes...</p>
           </div>
         </div>
       </div>
@@ -90,7 +84,7 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md mx-auto">
             <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-red-900 dark:text-red-100 mb-2">
-              Database Connection Error
+              Unable to Load Resumes
             </h3>
             <p className="text-red-700 dark:text-red-300 mb-4 text-sm">{error}</p>
             
@@ -100,7 +94,7 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
                 className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center space-x-2"
               >
                 <RefreshCw className="h-4 w-4" />
-                <span>Retry Connection</span>
+                <span>Try Again</span>
               </button>
               
               <button
@@ -110,16 +104,6 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
                 <Plus className="h-4 w-4" />
                 <span>Create New Resume</span>
               </button>
-            </div>
-
-            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                <strong>Troubleshooting:</strong><br />
-                • Check your internet connection<br />
-                • Verify Supabase configuration<br />
-                • Try refreshing the page<br />
-                • Contact support if the issue persists
-              </p>
             </div>
           </div>
         </div>
@@ -135,15 +119,9 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               My Resumes
             </h2>
-            <div className="flex items-center space-x-2">
-              <p className="text-gray-600 dark:text-gray-400">
-                Manage your saved resumes and create new ones
-              </p>
-              <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full text-xs">
-                <Database className="h-3 w-3" />
-                <span>Connected to Supabase</span>
-              </div>
-            </div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Manage your saved resumes and create new ones
+            </p>
           </div>
           
           <div className="flex items-center space-x-3">
@@ -178,15 +156,12 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
       {resumes.length === 0 ? (
         <div className="text-center py-12">
           <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-8 max-w-md mx-auto border border-gray-200 dark:border-gray-700">
-            <div className="relative mb-4">
-              <FileText className="h-16 w-16 text-gray-400 mx-auto" />
-              <Database className="h-6 w-6 text-blue-600 dark:text-blue-400 absolute -bottom-1 -right-1" />
-            </div>
+            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No resumes found in database
+              No resumes yet
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Your resumes will be automatically saved to Supabase. Create your first resume to get started!
+              Create your first resume to get started. All resumes are automatically saved to your account.
             </p>
             <button
               onClick={onCreateNew}
@@ -195,14 +170,6 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
               <Plus className="h-5 w-5" />
               <span>Create Your First Resume</span>
             </button>
-            
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                ✓ Auto-save to database<br />
-                ✓ Access from anywhere<br />
-                ✓ Secure cloud storage
-              </p>
-            </div>
           </div>
         </div>
       ) : (
@@ -262,14 +229,6 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
                 </div>
               </div>
 
-              {/* Database Status */}
-              <div className="mb-3 flex items-center justify-center">
-                <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full text-xs">
-                  <Database className="h-3 w-3" />
-                  <span>Saved to DB</span>
-                </div>
-              </div>
-
               {/* Actions */}
               <button
                 onClick={() => onSelectResume(resume.data, resume.id)}
@@ -280,34 +239,6 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
               </button>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Database Connection Status */}
-      <div className="mt-8 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-        <div className="flex items-center space-x-3">
-          <Database className="h-5 w-5 text-green-600 dark:text-green-400" />
-          <div>
-            <h4 className="font-medium text-green-900 dark:text-green-100">Connected to Supabase Database</h4>
-            <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-              Your resumes are automatically saved and synced across all your devices. All data is securely stored in the cloud.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Debug Info (only in development) */}
-      {import.meta.env.DEV && (
-        <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-2">Debug Info</h4>
-          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-            <div>User ID: {user?.id || 'Not authenticated'}</div>
-            <div>Resumes Count: {resumes.length}</div>
-            <div>Loading: {loading.toString()}</div>
-            <div>Error: {error || 'None'}</div>
-            <div>Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? 'Configured' : 'Missing'}</div>
-            <div>Supabase Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Configured' : 'Missing'}</div>
-          </div>
         </div>
       )}
     </div>

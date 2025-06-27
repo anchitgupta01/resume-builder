@@ -20,7 +20,6 @@ export const auth = {
         data: {
           full_name: fullName,
         },
-        // Ensure email confirmation is enabled
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -67,15 +66,11 @@ export const db = {
   resumes: {
     list: async (userId: string) => {
       try {
-        console.log('Fetching resumes for user:', userId);
-        
         const { data, error } = await supabase
           .from('resumes')
           .select('*')
           .eq('user_id', userId)
           .order('updated_at', { ascending: false });
-        
-        console.log('Resume query result:', { data, error });
         
         return { data, error };
       } catch (err) {

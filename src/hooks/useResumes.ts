@@ -28,21 +28,18 @@ export function useResumes() {
       setLoading(true);
       setError(null);
       
-      console.log('Loading resumes for user:', user.id);
-      
       const { data, error } = await db.resumes.list(user.id);
       
       if (error) {
         console.error('Database error:', error);
-        setError(`Failed to load resumes: ${error.message}`);
+        setError('Failed to load resumes from database');
         setResumes([]);
       } else {
-        console.log('Loaded resumes:', data);
         setResumes(data || []);
       }
     } catch (err) {
       console.error('Unexpected error loading resumes:', err);
-      setError('An unexpected error occurred while loading resumes');
+      setError('Unable to connect to database');
       setResumes([]);
     } finally {
       setLoading(false);
@@ -59,12 +56,9 @@ export function useResumes() {
         data: resume,
       };
 
-      console.log('Saving resume:', resumeData);
-
       const { data, error } = await db.resumes.create(resumeData);
       
       if (error) {
-        console.error('Save error:', error);
         throw new Error(`Failed to save resume: ${error.message}`);
       }
       
@@ -93,12 +87,9 @@ export function useResumes() {
         updates.name = name;
       }
 
-      console.log('Updating resume:', id, updates);
-
       const { data, error } = await db.resumes.update(id, updates);
       
       if (error) {
-        console.error('Update error:', error);
         throw new Error(`Failed to update resume: ${error.message}`);
       }
       
@@ -122,12 +113,9 @@ export function useResumes() {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      console.log('Deleting resume:', id);
-
       const { error } = await db.resumes.delete(id);
       
       if (error) {
-        console.error('Delete error:', error);
         throw new Error(`Failed to delete resume: ${error.message}`);
       }
       
@@ -147,12 +135,9 @@ export function useResumes() {
 
   const getResume = async (id: string) => {
     try {
-      console.log('Getting resume:', id);
-
       const { data, error } = await db.resumes.get(id);
       
       if (error) {
-        console.error('Get resume error:', error);
         throw new Error(`Failed to load resume: ${error.message}`);
       }
       
@@ -164,7 +149,6 @@ export function useResumes() {
   };
 
   useEffect(() => {
-    console.log('useResumes effect triggered, user:', user?.id);
     loadResumes();
   }, [user]);
 
