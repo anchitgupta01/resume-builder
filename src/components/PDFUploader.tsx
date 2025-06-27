@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Loader, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Upload, FileText, Loader, AlertCircle, X } from 'lucide-react';
 import { Resume } from '../types/resume';
 import { processResumeUpload } from '../utils/pdfExtractor';
 
@@ -62,14 +62,14 @@ export function PDFUploader({ onResumeExtracted, onClose }: PDFUploaderProps) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
                 <Upload className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
                   Upload Resume PDF
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -87,7 +87,7 @@ export function PDFUploader({ onResumeExtracted, onClose }: PDFUploaderProps) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {!hasApiKey ? (
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
@@ -107,7 +107,7 @@ export function PDFUploader({ onResumeExtracted, onClose }: PDFUploaderProps) {
             <>
               {/* Upload Area */}
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-colors ${
                   dragActive
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                     : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'

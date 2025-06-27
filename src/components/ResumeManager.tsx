@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Plus, Edit3, Trash2, Download, Calendar, Loader } from 'lucide-react';
+import { FileText, Plus, Edit3, Trash2, Calendar, Loader } from 'lucide-react';
 import { useResumes } from '../hooks/useResumes';
 import { Resume } from '../types/resume';
 
@@ -37,7 +37,7 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
@@ -50,7 +50,7 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <div className="text-center">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
             <h3 className="text-lg font-medium text-red-900 dark:text-red-100 mb-2">
@@ -64,8 +64,8 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="mb-8">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
+      <div className="mb-6 sm:mb-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           My Resumes
         </h2>
@@ -78,7 +78,7 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
       <div className="mb-6">
         <button
           onClick={onCreateNew}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          className="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
           <Plus className="h-5 w-5" />
           <span>Create New Resume</span>
@@ -104,55 +104,31 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {resumes.map((resume) => (
             <div
               key={resume.id}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                  <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg flex-shrink-0">
                     <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                       {resume.name || 'Untitled Resume'}
                     </h3>
                     <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
-                      <Calendar className="h-3 w-3" />
-                      <span>Updated {formatDate(resume.updated_at)}</span>
+                      <Calendar className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">Updated {formatDate(resume.updated_at)}</span>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Resume Preview */}
-              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {resume.data.personalInfo.fullName || 'No name set'}
-                </p>
-                <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                  <span>{resume.data.experience.length} jobs</span>
-                  <span>{resume.data.skills.length} skills</span>
-                  <span>{resume.data.projects.length} projects</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => onSelectResume(resume.data, resume.id)}
-                  className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1"
-                >
-                  <Edit3 className="h-4 w-4" />
-                  <span>Edit</span>
-                </button>
-                
                 <button
                   onClick={() => handleDelete(resume.id, resume.name || 'Untitled Resume')}
                   disabled={deletingId === resume.id}
-                  className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                  className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 flex-shrink-0"
                   title="Delete resume"
                 >
                   {deletingId === resume.id ? (
@@ -162,6 +138,36 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
                   )}
                 </button>
               </div>
+
+              {/* Resume Preview */}
+              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">
+                  {resume.data.personalInfo.fullName || 'No name set'}
+                </p>
+                <div className="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-center">
+                    <div className="font-medium">{resume.data.experience.length}</div>
+                    <div>Jobs</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium">{resume.data.skills.length}</div>
+                    <div>Skills</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium">{resume.data.projects.length}</div>
+                    <div>Projects</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <button
+                onClick={() => onSelectResume(resume.data, resume.id)}
+                className="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1"
+              >
+                <Edit3 className="h-4 w-4" />
+                <span>Edit Resume</span>
+              </button>
             </div>
           ))}
         </div>
