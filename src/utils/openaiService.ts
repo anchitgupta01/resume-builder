@@ -28,6 +28,255 @@ class OpenAIService {
     }
   }
 
+  async parseResumeText(extractedText: string): Promise<Resume> {
+    if (!this.isInitialized || !this.openai) {
+      throw new Error('OpenAI API key is required for resume parsing. Please configure your API key to enable this feature.');
+    }
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: this.getResumeParsingSystemPrompt()
+          },
+          {
+            role: "user",
+            content: `Please parse this resume text and extract the information into the specified JSON format:\n\n${extractedText}`
+          }
+        ],
+        max_tokens: 3000,
+        temperature: 0.1
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error('No response received from OpenAI');
+      }
+
+      try {
+        // Extract JSON from response
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : response;
+        const parsed = JSON.parse(jsonString);
+        
+        // Validate and structure the parsed data
+        return this.validateAndStructureResumeData(parsed);
+      } catch (parseError) {
+        console.error('Failed to parse resume extraction response:', parseError);
+        console.log('Raw response:', response);
+        throw new Error('Failed to parse the extracted resume data. Please try again or check the PDF format.');
+      }
+    } catch (error) {
+      console.error('OpenAI resume parsing error:', error);
+      throw error;
+    }
+  }
+
+  private validateAndStructureResumeData(parsed: any): Resume {
+    // Create a properly structured resume object with defaults
+    const resume: Resume = {
+      personalInfo: {
+        fullName: parsed.personalInfo?.fullName || '',
+        email: parsed.personalInfo?.email || '',
+        phone: parsed.personalInfo?.phone || '',
+        location: parsed.personalInfo?.location || '',
+        linkedin: parsed.personalInfo?.linkedin || '',
+        github: parsed.personalInfo?.github || '',
+        website: parsed.personalInfo?.website || '',
+        summary: parsed.personalInfo?.summary || ''
+      },
+      experience: [],
+      education: [],
+      skills: [],
+      projects: []
+    };
+
+    // Process experience
+    if (parsed.experience && Array.isArray(parsed.experience)) {
+      resume.experience = parsed.experience.map((exp: any, index: number) => ({
+        id: `exp-${index}`,
+        company: exp.company || '',
+        position: exp.position || '',
+        startDate: exp.startDate || '',
+        endDate: exp.endDate || '',
+        current: exp.current || false,
+        description: Array.isArray(exp.description) ? exp.description : [],
+        achievements: Array.isArray(exp.achievements) ? exp.achievements : []
+      }));
+    }
+
+    // Process education
+    if (parsed.education && Array.isArray(parsed.education)) {
+      resume.education = parsed.education.map((edu: any, index: number) => ({
+        id: `edu-${index}`,
+        institution: edu.institution || '',
+        degree: edu.degree || '',
+        field: edu.field || '',
+        graduationDate: edu.graduationDate || '',
+        gpa: edu.gpa || '',
+        honors: Array.isArray(edu.honors) ? edu.honors : []
+      }));
+    }
+
+    // Process skills
+    if (parsed.skills && Array.isArray(parsed.skills)) {
+      resume.skills = parsed.skills.map((skill: any, index: number) => ({
+        id: `skill-${index}`,
+        name: skill.name || '',
+        category: skill.category || 'technical',
+        proficiency: skill.proficiency || 'intermediate'
+      }));
+    }
+
+    // Process projects
+    if (parsed.projects && Array.isArray(parsed.projects)) {
+      resume.projects = parsed.projects.map((proj: any, index: number) => ({
+        id: `proj-${index}`,
+        name: proj.name || '',
+        description: proj.description || '',
+        technologies: Array.isArray(proj.technologies) ? proj.technologies : [],
+        link: proj.link || '',
+        github: proj.github || ''
+      }));
+    }
+
+    return resume;
+  }
+
+  private getResumeParsingSystemPrompt(): string {
+    return `You are an expert resume parser that extracts structured information from resume text. Your job is to analyze resume text and extract relevant information into a specific JSON format.
+
+## EXTRACTION GUIDELINES ##
+
+### Personal Information
+- **Full Name**: Extract the candidate's full name (usually at the top)
+- **Email**: Look for email addresses (format: name@domain.com)
+- **Phone**: Extract phone numbers in any format
+- **Location**: City, State, Country information
+- **LinkedIn**: LinkedIn profile URLs or usernames
+- **GitHub**: GitHub profile URLs or usernames  
+- **Website**: Personal website or portfolio URLs
+- **Summary**: Professional summary, objective, or about section
+
+### Work Experience
+For each job, extract:
+- **Company**: Company/organization name
+- **Position**: Job title or role
+- **Start Date**: When they started (format as YYYY-MM if possible)
+- **End Date**: When they ended (format as YYYY-MM if possible)
+- **Current**: Boolean indicating if this is their current job
+- **Description**: Array of job responsibilities and duties
+- **Achievements**: Array of specific accomplishments, metrics, and results
+
+### Education
+For each educational entry:
+- **Institution**: School, university, or educational institution name
+- **Degree**: Type of degree (Bachelor's, Master's, PhD, Certificate, etc.)
+- **Field**: Field of study or major
+- **Graduation Date**: When they graduated (format as YYYY-MM if possible)
+- **GPA**: Grade point average if mentioned
+- **Honors**: Any honors, awards, or distinctions
+
+### Skills
+Extract all mentioned skills and categorize them:
+- **Technical Skills**: Programming languages, software, tools, platforms
+- **Soft Skills**: Communication, leadership, teamwork, etc.
+- **Languages**: Spoken languages and proficiency
+- **Certifications**: Professional certifications and credentials
+
+For each skill, determine proficiency level based on context:
+- **Expert**: Explicitly mentioned as expert, advanced, or many years of experience
+- **Advanced**: Strong experience or leadership using the skill
+- **Intermediate**: Some experience or moderate proficiency mentioned
+- **Beginner**: Basic knowledge or recently learned
+
+### Projects
+For each project mentioned:
+- **Name**: Project title or name
+- **Description**: What the project does and your role
+- **Technologies**: Technologies, tools, or frameworks used
+- **Link**: Live demo or project URL if mentioned
+- **GitHub**: GitHub repository URL if mentioned
+
+## RESPONSE FORMAT ##
+Always respond with valid JSON in this exact structure:
+
+{
+  "personalInfo": {
+    "fullName": "string",
+    "email": "string", 
+    "phone": "string",
+    "location": "string",
+    "linkedin": "string",
+    "github": "string", 
+    "website": "string",
+    "summary": "string"
+  },
+  "experience": [
+    {
+      "company": "string",
+      "position": "string", 
+      "startDate": "YYYY-MM",
+      "endDate": "YYYY-MM",
+      "current": boolean,
+      "description": ["string", "string"],
+      "achievements": ["string", "string"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "string",
+      "degree": "string",
+      "field": "string", 
+      "graduationDate": "YYYY-MM",
+      "gpa": "string",
+      "honors": ["string", "string"]
+    }
+  ],
+  "skills": [
+    {
+      "name": "string",
+      "category": "technical|soft|language|certification", 
+      "proficiency": "beginner|intermediate|advanced|expert"
+    }
+  ],
+  "projects": [
+    {
+      "name": "string",
+      "description": "string",
+      "technologies": ["string", "string"],
+      "link": "string",
+      "github": "string"
+    }
+  ]
+}
+
+## PARSING INSTRUCTIONS ##
+
+1. **Be Thorough**: Extract all available information, even if some fields are incomplete
+2. **Infer When Necessary**: Use context clues to determine missing information (like proficiency levels)
+3. **Clean Data**: Remove extra whitespace, fix formatting issues, standardize date formats
+4. **Separate Concerns**: Distinguish between job responsibilities (description) and achievements (achievements)
+5. **Categorize Properly**: Assign appropriate categories and proficiency levels to skills
+6. **Handle Variations**: Account for different resume formats and styles
+7. **Preserve Important Details**: Don't lose important context or specific details
+8. **Use Arrays**: Always use arrays for multiple items, even if there's only one item
+
+## COMMON PATTERNS TO RECOGNIZE ##
+
+- **Dates**: "Jan 2020 - Present", "2019-2021", "January 2020 to December 2021"
+- **Skills Sections**: "Technical Skills", "Core Competencies", "Proficiencies"  
+- **Experience Sections**: "Work Experience", "Professional Experience", "Employment History"
+- **Education Sections**: "Education", "Academic Background", "Qualifications"
+- **Project Sections**: "Projects", "Portfolio", "Key Projects", "Notable Work"
+- **Contact Info**: Usually at the top, may include social media links
+- **Achievements**: Look for numbers, percentages, dollar amounts, "increased", "reduced", "improved"
+
+Remember: Your goal is to extract as much relevant information as possible while maintaining accuracy and proper structure. If information is unclear or missing, use empty strings or empty arrays rather than making up data.`;
+  }
+
   async generateResumeAdvice(userMessage: string, resume: Resume): Promise<string> {
     if (!this.isInitialized || !this.openai) {
       throw new Error('OpenAI API key is required for AI assistance. Please configure your API key to enable AI features.');
