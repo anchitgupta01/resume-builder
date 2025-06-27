@@ -29,12 +29,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event, session?.user?.email);
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
 
-      // Track auth events
-      if (event === 'SIGNED_IN') {
+      // Track auth events (only for authenticated users)
+      if (event === 'SIGNED_IN' && session?.user) {
         await db.analytics.track('user_signed_in');
       } else if (event === 'SIGNED_OUT') {
         await db.analytics.track('user_signed_out');
@@ -45,37 +47,90 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await auth.signUp(email, password, fullName);
-    if (!error) {
-      await db.analytics.track('user_signed_up', { email });
+    try {
+      const { data, error } = await auth.signUp(email, password, fullName);
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        return { error };
+      }
+
+      // Track signup attempt (only if user was created)
+      if (data.user) {
+        await db.analytics.track('user_signed_up', { email });
+      }
+
+      return { error: null };
+    } catch (err) {
+      console.error('Unexpected signup error:', err);
+      return { error: { message: 'An unexpected error occurred during signup' } };
     }
-    return { error };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await auth.signIn(email, password);
-    return { error };
+    try {
+      const { data, error } = await auth.signIn(email, password);
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        return { error };
+      }
+
+      return { error: null };
+    } catch (err) {
+      console.error('Unexpected signin error:', err);
+      return { error: { message: 'An unexpected error occurred during signin' } };
+    }
   };
 
   const signOut = async () => {
-    const { error } = await auth.signOut();
-    return { error };
+    try {
+      const { error } = await auth.signOut();
+      return { error };
+    } catch (err) {
+      console.error('Sign out error:', err);
+      return { error: { message: 'An unexpected error occurred during signout' } };
+    }
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await auth.resetPassword(email);
-    if (!error) {
+    try {
+      const { data, error } = await auth.resetPassword(email);
+      
+      if (error) {
+        console.error('Password reset error:', error);
+        return { error };
+      }
+
+      // Track password reset request
       await db.analytics.track('password_reset_requested', { email });
+      
+      return { error: null };
+    } catch (err) {
+      console.error('Unexpected password reset error:', err);
+      return { error: { message: 'An unexpected error occurred during password reset' } };
     }
-    return { error };
   };
 
   const updatePassword = async (password: string) => {
-    const { error } = await auth.updatePassword(password);
-    if (!error) {
-      await db.analytics.track('password_updated');
+    try {
+      const { data, error } = await auth.updatePassword(password);
+      
+      if (error) {
+        console.error('Password update error:', error);
+        return { error };
+      }
+
+      // Track password update (only for authenticated users)
+      if (user) {
+        await db.analytics.track('password_updated');
+      }
+      
+      return { error: null };
+    } catch (err) {
+      console.error('Unexpected password update error:', err);
+      return { error: { message: 'An unexpected error occurred during password update' } };
     }
-    return { error };
   };
 
   const value = {

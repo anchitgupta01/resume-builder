@@ -20,6 +20,8 @@ export const auth = {
         data: {
           full_name: fullName,
         },
+        // Ensure email confirmation is enabled
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     return { data, error };
@@ -40,7 +42,7 @@ export const auth = {
 
   resetPassword: async (email: string) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/auth/reset-password`,
     });
     return { data, error };
   },
@@ -68,7 +70,6 @@ export const db = {
         .from('resumes')
         .select('*')
         .eq('user_id', userId)
-        .eq('is_template', false)
         .order('updated_at', { ascending: false });
       return { data, error };
     },
@@ -153,7 +154,6 @@ export const db = {
       const { data, error } = await supabase
         .from('templates')
         .select('*')
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
       return { data, error };
     },

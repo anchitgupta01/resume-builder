@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff, Loader } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, Loader, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface AuthModalProps {
@@ -38,7 +38,13 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
       if (mode === 'signin') {
         const { error } = await signIn(email, password);
         if (error) {
-          setError(error.message);
+          if (error.message.includes('Email not confirmed')) {
+            setError('Please check your email and click the confirmation link before signing in.');
+          } else if (error.message.includes('Invalid login credentials')) {
+            setError('Invalid email or password. Please check your credentials and try again.');
+          } else {
+            setError(error.message);
+          }
         } else {
           onClose();
         }
@@ -51,22 +57,27 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           setError('Password must be at least 6 characters');
           return;
         }
+        
         const { error } = await signUp(email, password, fullName);
         if (error) {
-          setError(error.message);
+          if (error.message.includes('User already registered')) {
+            setError('An account with this email already exists. Please sign in instead.');
+          } else {
+            setError(error.message);
+          }
         } else {
-          setMessage('Check your email for the confirmation link!');
+          setMessage('Success! Please check your email for a confirmation link. You must click the link before you can sign in.');
         }
       } else if (mode === 'reset') {
         const { error } = await resetPassword(email);
         if (error) {
           setError(error.message);
         } else {
-          setMessage('Check your email for the password reset link!');
+          setMessage('Password reset email sent! Please check your inbox for instructions.');
         }
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -226,14 +237,35 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             {/* Error Message */}
             {error && (
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                  <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+                </div>
               </div>
             )}
 
             {/* Success Message */}
             {message && (
               <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="text-green-700 dark:text-green-300 text-sm">{message}</p>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <p className="text-green-700 dark:text-green-300 text-sm">{message}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Email Confirmation Notice for Signup */}
+            {mode === 'signup' && !message && !error && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-blue-900 dark:text-blue-100 font-medium text-sm">Email Confirmation Required</h4>
+                    <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">
+                      After creating your account, you'll receive a confirmation email. Please click the link in the email before signing in.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
