@@ -48,7 +48,11 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
   };
 
   const handleResumeFixing = async (userMessage: string) => {
+    console.log('🔧 AI Chat: Starting resume fixing process');
+    console.log('🔧 AI Chat: onResumeChange available:', !!onResumeChange);
+    
     if (!onResumeChange) {
+      console.error('❌ AI Chat: onResumeChange not available');
       const errorMsg: ChatMessage = {
         id: Date.now().toString(),
         type: 'assistant',
@@ -62,6 +66,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
     setIsFixingResume(true);
     
     try {
+      console.log('🔧 AI Chat: Adding user message');
       // Add user message
       const userMsg: ChatMessage = {
         id: Date.now().toString(),
@@ -71,6 +76,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       };
       setMessages(prev => [...prev, userMsg]);
 
+      console.log('🔧 AI Chat: Adding processing message');
       // Add processing message
       const processingMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -80,11 +86,19 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       };
       setMessages(prev => [...prev, processingMsg]);
 
+      console.log('🔧 AI Chat: Calling OpenAI service to fix resume');
+      console.log('🔧 AI Chat: Current resume data:', resume);
+      
       // Call the resume fixing service
       const fixResult = await openaiService.fixResumeForATS(resume);
       
+      console.log('🔧 AI Chat: Received fix result:', fixResult);
+      console.log('🔧 AI Chat: Applying improvements to resume');
+      
       // Apply the improvements to the resume
       onResumeChange(fixResult.improvedResume);
+
+      console.log('🔧 AI Chat: Resume updated successfully');
 
       // Create success message
       const successMsg: ChatMessage = {
@@ -97,8 +111,10 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       // Remove processing message and add success message
       setMessages(prev => prev.slice(0, -1).concat(successMsg));
 
+      console.log('✅ AI Chat: Resume fixing completed successfully');
+
     } catch (error) {
-      console.error('Error fixing resume:', error);
+      console.error('❌ AI Chat: Error fixing resume:', error);
       
       const errorMsg: ChatMessage = {
         id: (Date.now() + 3).toString(),
@@ -117,12 +133,17 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading || isFixingResume) return;
 
+    console.log('💬 AI Chat: Sending message:', inputMessage);
+
     // Check if this is a resume fixing request
     if (detectResumeFixRequest(inputMessage)) {
+      console.log('🔧 AI Chat: Detected resume fix request');
       await handleResumeFixing(inputMessage);
       setInputMessage('');
       return;
     }
+
+    console.log('💬 AI Chat: Regular chat message');
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -136,6 +157,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
     setIsLoading(true);
 
     try {
+      console.log('💬 AI Chat: Calling OpenAI for advice');
       const response = await openaiService.generateResumeAdvice(inputMessage, resume);
       
       const assistantMessage: ChatMessage = {
@@ -146,7 +168,9 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      console.log('✅ AI Chat: Advice generated successfully');
     } catch (error) {
+      console.error('❌ AI Chat: Error generating advice:', error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
@@ -178,6 +202,8 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
   ];
 
   const handleQuickQuestion = (question: string) => {
+    console.log('🎯 AI Chat: Quick question selected:', question);
+    
     if (question === "Show me professional resume templates") {
       const templateInfo = resumeTemplates.map(t => 
         `• ${t.name} (${t.level} level) - ${t.description}`
@@ -192,6 +218,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       
       setMessages(prev => [...prev, templateMessage]);
     } else if (question === "Fix my resume and increase ATS score") {
+      console.log('🔧 AI Chat: Quick fix request triggered');
       handleResumeFixing(question);
     } else {
       setInputMessage(question);
@@ -201,24 +228,29 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
   const hasApiKey = !!import.meta.env.VITE_OPENAI_API_KEY;
   const canModifyResume = !!onResumeChange;
 
+  console.log('🔍 AI Chat: Render state check');
+  console.log('🔍 AI Chat: hasApiKey:', hasApiKey);
+  console.log('🔍 AI Chat: canModifyResume:', canModifyResume);
+  console.log('🔍 AI Chat: onResumeChange function:', onResumeChange);
+
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col p-4 sm:p-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex-1 flex flex-col min-h-0">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+        <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-lg flex-shrink-0">
                 <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
                   AI Resume Assistant
                 </h2>
                 <div className="flex items-center space-x-2">
-                  <p className="text-gray-600 text-sm">Powered by OpenAI</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Powered by OpenAI</p>
                   {canModifyResume && hasApiKey && (
-                    <div className="flex items-center space-x-1 text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs">
+                    <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full text-xs">
                       <CheckCircle className="h-3 w-3" />
                       <span>Can modify resume</span>
                     </div>
@@ -229,13 +261,13 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
             
             {!hasApiKey && (
               <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                <div className="flex items-center space-x-1 text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-sm">
+                <div className="flex items-center space-x-1 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full text-sm">
                   <Key className="h-4 w-4" />
                   <span>API Key Required</span>
                 </div>
                 <button
                   onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                  className="text-blue-600 hover:text-blue-800 text-sm underline"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
                 >
                   Configure
                 </button>
@@ -245,15 +277,15 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
           
           {/* API Key Configuration */}
           {showApiKeyInput && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">OpenAI API Configuration</h4>
-              <p className="text-sm text-blue-700 mb-3">
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">OpenAI API Configuration</h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
                 To enable AI-powered features including automatic resume fixing, add your OpenAI API key:
               </p>
-              <div className="bg-blue-100 p-3 rounded font-mono text-sm text-blue-800 break-all">
+              <div className="bg-blue-100 dark:bg-blue-800 p-3 rounded font-mono text-sm text-blue-800 dark:text-blue-200 break-all">
                 VITE_OPENAI_API_KEY=your_api_key_here
               </div>
-              <p className="text-xs text-blue-600 mt-2">
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                 Get your API key from{' '}
                 <a 
                   href="https://platform.openai.com/api-keys" 
@@ -269,12 +301,12 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
 
           {/* Resume Modification Status */}
           {!canModifyResume && (
-            <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
               <div className="flex items-center space-x-3">
-                <Key className="h-5 w-5 text-amber-600" />
+                <Key className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 <div>
-                  <h4 className="font-medium text-amber-900">Limited Functionality</h4>
-                  <p className="text-sm text-amber-700 mt-1">
+                  <h4 className="font-medium text-amber-900 dark:text-amber-100">Limited Functionality</h4>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
                     Resume modification is not available in this context. I can provide advice but cannot directly edit your resume.
                   </p>
                 </div>
@@ -312,13 +344,13 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                   className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${
                     message.type === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}
                 >
                   <div className="text-sm sm:text-base">
                     <ReactMarkdown
                       className={`prose prose-sm max-w-none ${
-                        message.type === 'user' ? 'prose-invert' : ''
+                        message.type === 'user' ? 'prose-invert' : 'dark:prose-invert'
                       }`}
                       components={{
                         p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -331,7 +363,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                           <code className={`px-1 py-0.5 rounded text-xs font-mono ${
                             message.type === 'user' 
                               ? 'bg-blue-500 text-blue-100' 
-                              : 'bg-gray-200 text-gray-800'
+                              : 'bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200'
                           }`}>
                             {children}
                           </code>
@@ -344,7 +376,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                           <blockquote className={`border-l-4 pl-4 my-2 ${
                             message.type === 'user' 
                               ? 'border-blue-300' 
-                              : 'border-gray-300'
+                              : 'border-gray-300 dark:border-gray-600'
                           }`}>
                             {children}
                           </blockquote>
@@ -356,7 +388,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                   </div>
                   <p
                     className={`text-xs mt-1 sm:mt-2 ${
-                      message.type === 'user' ? 'text-blue-200' : 'text-gray-500'
+                      message.type === 'user' ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString()}
@@ -372,10 +404,10 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white flex items-center justify-center">
                   <Bot className="h-4 w-4" />
                 </div>
-                <div className="px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-gray-100">
+                <div className="px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-gray-100 dark:bg-gray-700">
                   <div className="flex items-center space-x-2">
                     <Loader className="h-4 w-4 animate-spin" />
-                    <span className="text-gray-600 text-sm sm:text-base">
+                    <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
                       {isFixingResume ? 'AI is fixing your resume...' : 'AI is analyzing and responding...'}
                     </span>
                   </div>
@@ -389,10 +421,10 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
 
         {/* Quick Questions */}
         {messages.length === 1 && (
-          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex-shrink-0">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center space-x-2 mb-3">
-              <Sparkles className="h-4 w-4 text-purple-600" />
-              <p className="text-sm font-medium text-gray-700">Quick actions to get started:</p>
+              <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick actions to get started:</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {quickQuestions.map((question, index) => (
@@ -402,8 +434,8 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                   disabled={(!hasApiKey || !canModifyResume) && question.includes('Fix my resume')}
                   className={`px-3 py-2 text-sm rounded-lg transition-colors text-left flex items-center space-x-2 ${
                     question.includes('Fix my resume') 
-                      ? 'bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 text-purple-800 font-medium'
-                      : 'bg-gray-100 hover:bg-gray-200'
+                      ? 'bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-200 hover:to-blue-200 dark:hover:from-purple-800/30 dark:hover:to-blue-800/30 text-purple-800 dark:text-purple-300 font-medium'
+                      : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
                   } ${(!hasApiKey || !canModifyResume) && question.includes('Fix my resume') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {question.includes('Fix my resume') && <Zap className="h-4 w-4" />}
@@ -416,7 +448,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
         )}
 
         {/* Input */}
-        <div className="p-4 sm:p-6 border-t border-gray-200 flex-shrink-0">
+        <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
             <textarea
               value={inputMessage}
@@ -429,7 +461,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                   ? "Ask me questions about resume improvement (modification not available)..."
                   : "Ask me to fix your resume or any question about improving it..."
               }
-              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               rows={2}
               disabled={isLoading || isFixingResume || !hasApiKey}
             />
@@ -444,13 +476,13 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
           </div>
           
           {!hasApiKey && (
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               💡 Add your OpenAI API key to unlock AI-powered resume fixing and analysis
             </p>
           )}
           
           {hasApiKey && !canModifyResume && (
-            <p className="text-xs text-amber-600 mt-2">
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
               ⚠️ Resume modification is not available in this context - I can provide advice only
             </p>
           )}
