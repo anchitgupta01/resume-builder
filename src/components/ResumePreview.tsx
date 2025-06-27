@@ -15,6 +15,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
   const [jobDescription, setJobDescription] = useState('');
   const [showJobDescInput, setShowJobDescInput] = useState(false);
   const [isScorePanelCollapsed, setIsScorePanelCollapsed] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     analyzeResume();
@@ -42,42 +43,214 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
   };
 
   const downloadPDF = async () => {
-    if (!resumeRef.current) return;
+    if (!resume) return;
 
     try {
+      setIsGeneratingPDF(true);
+      
       // Dynamic import to reduce bundle size
-      const html2canvas = (await import('html2canvas')).default;
       const jsPDF = (await import('jspdf')).default;
 
-      const canvas = await html2canvas(resumeRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true
-      });
-
-      const imgData = canvas.toDataURL('image/png');
+      // Create new PDF document
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      let currentY = margin;
 
-      let position = 0;
+      // Helper function to add text with word wrapping
+      const addText = (text: string, fontSize: number, fontStyle: 'normal' | 'bold' = 'normal', color: [number, number, number] = [0, 0, 0]) => {
+        pdf.setFontSize(fontSize);
+        pdf.setFont('helvetica', fontStyle);
+        pdf.setTextColor(color[0], color[1], color[2]);
+        
+        const lines = pdf.splitTextToSize(text, contentWidth);
+        const lineHeight = fontSize * 0.35; // Convert pt to mm
+        
+        // Check if we need a new page
+        if (currentY + (lines.length * lineHeight) > pageHeight - margin) {
+          pdf.addPage();
+          currentY = margin;
+        }
+        
+        pdf.text(lines, margin, currentY);
+        currentY += lines.length * lineHeight;
+        return currentY;
+      };
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Helper function to add spacing
+      const addSpacing = (space: number) => {
+        currentY += space;
+      };
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      // Helper function to add a section header
+      const addSectionHeader = (title: string) => {
+        addSpacing(8);
+        addText(title.toUpperCase(), 14, 'bold', [0, 0, 0]);
+        
+        // Add underline
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, currentY + 1, pageWidth - margin, currentY + 1);
+        addSpacing(6);
+      };
+
+      // Header - Personal Information
+      if (resume.personalInfo.fullName) {
+        addText(resume.personalInfo.fullName, 24, 'bold', [0, 0, 0]);
+        addSpacing(4);
       }
 
-      pdf.save(`${resume.personalInfo.fullName || 'resume'}.pdf`);
+      // Contact Information
+      const contactInfo = [];
+      if (resume.personalInfo.email) contactInfo.push(resume.personalInfo.email);
+      if (resume.personalInfo.phone) contactInfo.push(resume.personalInfo.phone);
+      if (resume.personalInfo.location) contactInfo.push(resume.personalInfo.location);
+      
+      if (contactInfo.length > 0) {
+        addText(contactInfo.join(' • '), 11, 'normal', [60, 60, 60]);
+        addSpacing(2);
+      }
+
+      // Links
+      const links = [];
+      if (resume.personalInfo.linkedin) links.push('LinkedIn: ' + resume.personalInfo.linkedin);
+      if (resume.personalInfo.github) links.push('GitHub: ' + resume.personalInfo.github);
+      if (resume.personalInfo.website) links.push('Portfolio: ' + resume.personalInfo.website);
+      
+      if (links.length > 0) {
+        addText(links.join(' • '), 10, 'normal', [0, 100, 200]);
+        addSpacing(4);
+      }
+
+      // Professional Summary
+      if (resume.personalInfo.summary) {
+        addSectionHeader('Professional Summary');
+        addText(resume.personalInfo.summary, 11, 'normal');
+      }
+
+      // Work Experience
+      if (resume.experience.length > 0) {
+        addSectionHeader('Professional Experience');
+        
+        resume.experience.forEach((exp, index) => {
+          if (index > 0) addSpacing(6);
+          
+          // Job title and company
+          addText(`${exp.position} • ${exp.company}`, 12, 'bold');
+          addSpacing(1);
+          
+          // Dates
+          const dateText = `${exp.startDate} - ${exp.current ? 'Present' : exp.endDate}`;
+          addText(dateText, 10, 'normal', [100, 100, 100]);
+          addSpacing(3);
+          
+          // Responsibilities
+          if (exp.description.length > 0) {
+            exp.description.forEach(desc => {
+              addText(`• ${desc}`, 10, 'normal');
+              addSpacing(1);
+            });
+          }
+          
+          // Achievements
+          if (exp.achievements.length > 0) {
+            exp.achievements.forEach(achievement => {
+              addText(`• ${achievement}`, 10, 'bold');
+              addSpacing(1);
+            });
+          }
+        });
+      }
+
+      // Education
+      if (resume.education.length > 0) {
+        addSectionHeader('Education');
+        
+        resume.education.forEach((edu, index) => {
+          if (index > 0) addSpacing(4);
+          
+          addText(`${edu.degree} in ${edu.field}`, 12, 'bold');
+          addSpacing(1);
+          addText(edu.institution, 11, 'normal');
+          addSpacing(1);
+          
+          const eduDetails = [];
+          if (edu.graduationDate) eduDetails.push(`Graduated: ${edu.graduationDate}`);
+          if (edu.gpa) eduDetails.push(`GPA: ${edu.gpa}`);
+          
+          if (eduDetails.length > 0) {
+            addText(eduDetails.join(' • '), 10, 'normal', [100, 100, 100]);
+            addSpacing(1);
+          }
+          
+          if (edu.honors && edu.honors.length > 0) {
+            addText(`Honors: ${edu.honors.join(', ')}`, 10, 'normal');
+            addSpacing(1);
+          }
+        });
+      }
+
+      // Skills
+      if (resume.skills.length > 0) {
+        addSectionHeader('Skills');
+        
+        const skillsByCategory = resume.skills.reduce((acc, skill) => {
+          if (!acc[skill.category]) acc[skill.category] = [];
+          acc[skill.category].push(skill.name);
+          return acc;
+        }, {} as Record<string, string[]>);
+
+        Object.entries(skillsByCategory).forEach(([category, skills]) => {
+          const categoryName = category === 'technical' ? 'Technical Skills' : 
+                             category === 'soft' ? 'Soft Skills' :
+                             category === 'language' ? 'Languages' : 'Certifications';
+          
+          addText(`${categoryName}:`, 11, 'bold');
+          addSpacing(1);
+          addText(skills.join(', '), 10, 'normal');
+          addSpacing(3);
+        });
+      }
+
+      // Projects
+      if (resume.projects.length > 0) {
+        addSectionHeader('Projects');
+        
+        resume.projects.forEach((project, index) => {
+          if (index > 0) addSpacing(4);
+          
+          addText(project.name, 12, 'bold');
+          addSpacing(1);
+          addText(project.description, 10, 'normal');
+          addSpacing(2);
+          
+          if (project.technologies.length > 0) {
+            addText(`Technologies: ${project.technologies.join(', ')}`, 10, 'normal', [100, 100, 100]);
+            addSpacing(1);
+          }
+          
+          const projectLinks = [];
+          if (project.link) projectLinks.push(`Demo: ${project.link}`);
+          if (project.github) projectLinks.push(`GitHub: ${project.github}`);
+          
+          if (projectLinks.length > 0) {
+            addText(projectLinks.join(' • '), 9, 'normal', [0, 100, 200]);
+            addSpacing(1);
+          }
+        });
+      }
+
+      // Save the PDF
+      const fileName = `${resume.personalInfo.fullName || 'resume'}.pdf`;
+      pdf.save(fileName);
+      
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Error generating PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -362,12 +535,27 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
               {/* Download Button */}
               <button
                 onClick={downloadPDF}
-                disabled={isResumeEmpty()}
+                disabled={isResumeEmpty() || isGeneratingPDF}
                 className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
               >
-                <Download className="h-4 w-4" />
-                <span>{isResumeEmpty() ? 'Add Content to Download' : 'Download PDF'}</span>
+                {isGeneratingPDF ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span>Generating PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span>{isResumeEmpty() ? 'Add Content to Download' : 'Download PDF'}</span>
+                  </>
+                )}
               </button>
+              
+              {!isResumeEmpty() && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                  ✨ PDF will contain selectable and copyable text
+                </p>
+              )}
             </div>
           </div>
         </div>
