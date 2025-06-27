@@ -110,34 +110,34 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
       <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-        <div className="bg-green-100 p-2 rounded-lg">
-          <Briefcase className="h-5 w-5 text-green-600" />
+        <div className="bg-green-100 dark:bg-green-900 p-2 rounded-lg">
+          <Briefcase className="h-5 w-5 text-green-600 dark:text-green-400" />
         </div>
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Work Experience</h3>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Work Experience</h3>
       </div>
 
       {/* Existing Experience */}
       <div className="space-y-4 mb-6">
         {experience.map((exp) => (
-          <div key={exp.id} className="border border-gray-200 rounded-lg p-4">
+          <div key={exp.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
             {editingId === exp.id && editingData ? (
               // Edit Mode
               <div className="space-y-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-semibold text-gray-900">Edit Experience</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">Edit Experience</h4>
                   <div className="flex space-x-2">
                     <button
                       onClick={saveEditing}
-                      className="text-green-600 hover:text-green-800 p-1"
+                      className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 p-1"
                       title="Save changes"
                     >
                       <Save className="h-4 w-4" />
                     </button>
                     <button
                       onClick={cancelEditing}
-                      className="text-gray-600 hover:text-gray-800 p-1"
+                      className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 p-1"
                       title="Cancel editing"
                     >
                       <X className="h-4 w-4" />
@@ -147,41 +147,41 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company</label>
                     <input
                       type="text"
                       value={editingData.company}
                       onChange={(e) => updateEditingData('company', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Position</label>
                     <input
                       type="text"
                       value={editingData.position}
                       onChange={(e) => updateEditingData('position', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
                     <input
                       type="month"
                       value={editingData.startDate}
                       onChange={(e) => updateEditingData('startDate', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
                     <div className="space-y-2">
                       <input
                         type="month"
                         value={editingData.endDate}
                         onChange={(e) => updateEditingData('endDate', e.target.value)}
                         disabled={editingData.current}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-600 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                       <label className="flex items-center">
                         <input
@@ -190,7 +190,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                           onChange={(e) => updateEditingData('current', e.target.checked)}
                           className="mr-2"
                         />
-                        <span className="text-sm text-gray-600">Currently working here</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Currently working here</span>
                       </label>
                     </div>
                   </div>
@@ -198,19 +198,19 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
 
                 {/* Edit Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Job Responsibilities</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Responsibilities</label>
                   {editingData.description.map((desc, index) => (
                     <div key={index} className="flex mb-2">
                       <input
                         type="text"
                         value={desc}
                         onChange={(e) => updateDescriptionItem('description', index, e.target.value, true)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Describe your responsibilities..."
                       />
                       <button
                         onClick={() => removeDescriptionItem('description', index, true)}
-                        className="ml-2 text-red-600 hover:text-red-800 p-2"
+                        className="ml-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -218,7 +218,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                   ))}
                   <button
                     onClick={() => addDescriptionItem('description', true)}
-                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Add responsibility
@@ -227,19 +227,19 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
 
                 {/* Edit Achievements */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Key Achievements</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Key Achievements</label>
                   {editingData.achievements.map((achievement, index) => (
                     <div key={index} className="flex mb-2">
                       <input
                         type="text"
                         value={achievement}
                         onChange={(e) => updateDescriptionItem('achievements', index, e.target.value, true)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Quantify your achievements with numbers..."
                       />
                       <button
                         onClick={() => removeDescriptionItem('achievements', index, true)}
-                        className="ml-2 text-red-600 hover:text-red-800 p-2"
+                        className="ml-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -247,7 +247,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                   ))}
                   <button
                     onClick={() => addDescriptionItem('achievements', true)}
-                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Add achievement
@@ -259,23 +259,23 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
               <>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3">
                   <div className="mb-2 sm:mb-0">
-                    <h4 className="font-semibold text-gray-900">{exp.position}</h4>
-                    <p className="text-gray-600">{exp.company}</p>
-                    <p className="text-sm text-gray-500">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{exp.position}</h4>
+                    <p className="text-gray-600 dark:text-gray-400">{exp.company}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500">
                       {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
                     </p>
                   </div>
                   <div className="flex space-x-2">
                     <button
                       onClick={() => startEditing(exp)}
-                      className="text-blue-600 hover:text-blue-800 p-1"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-1"
                       title="Edit experience"
                     >
                       <Edit3 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => removeExperience(exp.id)}
-                      className="text-red-600 hover:text-red-800 p-1"
+                      className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1"
                       title="Delete experience"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -285,8 +285,8 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                 
                 {exp.description.length > 0 && (
                   <div className="mb-2">
-                    <p className="text-sm font-medium text-gray-700 mb-1">Responsibilities:</p>
-                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Responsibilities:</p>
+                    <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1">
                       {exp.description.map((desc, index) => (
                         <li key={index}>{desc}</li>
                       ))}
@@ -296,8 +296,8 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                 
                 {exp.achievements.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Achievements:</p>
-                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Achievements:</p>
+                    <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1">
                       {exp.achievements.map((achievement, index) => (
                         <li key={index}>{achievement}</li>
                       ))}
@@ -311,50 +311,50 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
       </div>
 
       {/* Add New Experience */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6">
-        <h4 className="font-medium text-gray-900 mb-4">Add New Experience</h4>
+      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 sm:p-6 bg-gray-50 dark:bg-gray-800">
+        <h4 className="font-medium text-gray-900 dark:text-white mb-4">Add New Experience</h4>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Company *
             </label>
             <input
               type="text"
               value={newExperience.company || ''}
               onChange={(e) => setNewExperience(prev => ({ ...prev, company: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="Company Name"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Position *
             </label>
             <input
               type="text"
               value={newExperience.position || ''}
               onChange={(e) => setNewExperience(prev => ({ ...prev, position: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="Job Title"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Start Date
             </label>
             <input
               type="month"
               value={newExperience.startDate || ''}
               onChange={(e) => setNewExperience(prev => ({ ...prev, startDate: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               End Date
             </label>
             <div className="space-y-2">
@@ -363,7 +363,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                 value={newExperience.endDate || ''}
                 onChange={(e) => setNewExperience(prev => ({ ...prev, endDate: e.target.value }))}
                 disabled={newExperience.current}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-600 text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
               <label className="flex items-center">
                 <input
@@ -372,7 +372,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                   onChange={(e) => setNewExperience(prev => ({ ...prev, current: e.target.checked }))}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-600">Currently working here</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Currently working here</span>
               </label>
             </div>
           </div>
@@ -380,7 +380,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
 
         {/* Description */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Job Responsibilities
           </label>
           {(newExperience.description || []).map((desc, index) => (
@@ -389,12 +389,12 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                 type="text"
                 value={desc}
                 onChange={(e) => updateDescriptionItem('description', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Describe your responsibilities..."
               />
               <button
                 onClick={() => removeDescriptionItem('description', index)}
-                className="ml-2 text-red-600 hover:text-red-800 p-2"
+                className="ml-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -402,7 +402,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
           ))}
           <button
             onClick={() => addDescriptionItem('description')}
-            className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add responsibility
@@ -411,7 +411,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
 
         {/* Achievements */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Key Achievements
           </label>
           {(newExperience.achievements || []).map((achievement, index) => (
@@ -420,12 +420,12 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                 type="text"
                 value={achievement}
                 onChange={(e) => updateDescriptionItem('achievements', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Quantify your achievements with numbers..."
               />
               <button
                 onClick={() => removeDescriptionItem('achievements', index)}
-                className="ml-2 text-red-600 hover:text-red-800 p-2"
+                className="ml-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -433,7 +433,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
           ))}
           <button
             onClick={() => addDescriptionItem('achievements')}
-            className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add achievement
