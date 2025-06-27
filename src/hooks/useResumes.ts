@@ -26,15 +26,24 @@ export function useResumes() {
 
     try {
       setLoading(true);
+      setError(null);
+      
+      console.log('Loading resumes for user:', user.id);
+      
       const { data, error } = await db.resumes.list(user.id);
       
       if (error) {
-        setError(error.message);
+        console.error('Database error:', error);
+        setError(`Failed to load resumes: ${error.message}`);
+        setResumes([]);
       } else {
+        console.log('Loaded resumes:', data);
         setResumes(data || []);
       }
     } catch (err) {
-      setError('Failed to load resumes');
+      console.error('Unexpected error loading resumes:', err);
+      setError('An unexpected error occurred while loading resumes');
+      setResumes([]);
     } finally {
       setLoading(false);
     }
@@ -50,16 +59,28 @@ export function useResumes() {
         data: resume,
       };
 
+      console.log('Saving resume:', resumeData);
+
       const { data, error } = await db.resumes.create(resumeData);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Save error:', error);
+        throw new Error(`Failed to save resume: ${error.message}`);
+      }
       
       await loadResumes(); // Refresh the list
-      await db.analytics.track('resume_created', { resume_id: data.id });
+      
+      // Track analytics (non-blocking)
+      try {
+        await db.analytics.track('resume_created', { resume_id: data.id });
+      } catch (analyticsError) {
+        console.warn('Analytics tracking failed:', analyticsError);
+      }
       
       return data;
     } catch (err) {
-      throw new Error('Failed to save resume');
+      console.error('Save resume error:', err);
+      throw err;
     }
   };
 
@@ -72,16 +93,28 @@ export function useResumes() {
         updates.name = name;
       }
 
+      console.log('Updating resume:', id, updates);
+
       const { data, error } = await db.resumes.update(id, updates);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw new Error(`Failed to update resume: ${error.message}`);
+      }
       
       await loadResumes(); // Refresh the list
-      await db.analytics.track('resume_updated', { resume_id: id });
+      
+      // Track analytics (non-blocking)
+      try {
+        await db.analytics.track('resume_updated', { resume_id: id });
+      } catch (analyticsError) {
+        console.warn('Analytics tracking failed:', analyticsError);
+      }
       
       return data;
     } catch (err) {
-      throw new Error('Failed to update resume');
+      console.error('Update resume error:', err);
+      throw err;
     }
   };
 
@@ -89,30 +122,49 @@ export function useResumes() {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      console.log('Deleting resume:', id);
+
       const { error } = await db.resumes.delete(id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error:', error);
+        throw new Error(`Failed to delete resume: ${error.message}`);
+      }
       
       await loadResumes(); // Refresh the list
-      await db.analytics.track('resume_deleted', { resume_id: id });
+      
+      // Track analytics (non-blocking)
+      try {
+        await db.analytics.track('resume_deleted', { resume_id: id });
+      } catch (analyticsError) {
+        console.warn('Analytics tracking failed:', analyticsError);
+      }
     } catch (err) {
-      throw new Error('Failed to delete resume');
+      console.error('Delete resume error:', err);
+      throw err;
     }
   };
 
   const getResume = async (id: string) => {
     try {
+      console.log('Getting resume:', id);
+
       const { data, error } = await db.resumes.get(id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Get resume error:', error);
+        throw new Error(`Failed to load resume: ${error.message}`);
+      }
       
       return data;
     } catch (err) {
-      throw new Error('Failed to load resume');
+      console.error('Get resume error:', err);
+      throw err;
     }
   };
 
   useEffect(() => {
+    console.log('useResumes effect triggered, user:', user?.id);
     loadResumes();
   }, [user]);
 

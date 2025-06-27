@@ -66,48 +66,78 @@ export const db = {
   // Resume operations
   resumes: {
     list: async (userId: string) => {
-      const { data, error } = await supabase
-        .from('resumes')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false });
-      return { data, error };
+      try {
+        console.log('Fetching resumes for user:', userId);
+        
+        const { data, error } = await supabase
+          .from('resumes')
+          .select('*')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false });
+        
+        console.log('Resume query result:', { data, error });
+        
+        return { data, error };
+      } catch (err) {
+        console.error('Resume list error:', err);
+        return { data: null, error: { message: 'Failed to fetch resumes' } };
+      }
     },
 
     get: async (id: string) => {
-      const { data, error } = await supabase
-        .from('resumes')
-        .select('*')
-        .eq('id', id)
-        .single();
-      return { data, error };
+      try {
+        const { data, error } = await supabase
+          .from('resumes')
+          .select('*')
+          .eq('id', id)
+          .single();
+        return { data, error };
+      } catch (err) {
+        console.error('Resume get error:', err);
+        return { data: null, error: { message: 'Failed to fetch resume' } };
+      }
     },
 
     create: async (resume: any) => {
-      const { data, error } = await supabase
-        .from('resumes')
-        .insert(resume)
-        .select()
-        .single();
-      return { data, error };
+      try {
+        const { data, error } = await supabase
+          .from('resumes')
+          .insert(resume)
+          .select()
+          .single();
+        return { data, error };
+      } catch (err) {
+        console.error('Resume create error:', err);
+        return { data: null, error: { message: 'Failed to create resume' } };
+      }
     },
 
     update: async (id: string, updates: any) => {
-      const { data, error } = await supabase
-        .from('resumes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      return { data, error };
+      try {
+        const { data, error } = await supabase
+          .from('resumes')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        return { data, error };
+      } catch (err) {
+        console.error('Resume update error:', err);
+        return { data: null, error: { message: 'Failed to update resume' } };
+      }
     },
 
     delete: async (id: string) => {
-      const { error } = await supabase
-        .from('resumes')
-        .delete()
-        .eq('id', id);
-      return { error };
+      try {
+        const { error } = await supabase
+          .from('resumes')
+          .delete()
+          .eq('id', id);
+        return { error };
+      } catch (err) {
+        console.error('Resume delete error:', err);
+        return { error: { message: 'Failed to delete resume' } };
+      }
     },
   },
 
@@ -162,21 +192,26 @@ export const db = {
   // Analytics operations
   analytics: {
     track: async (event: string, details?: any) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Only track analytics for authenticated users to comply with RLS policy
-      if (!user?.id) {
-        return { error: null }; // Return success for unauthenticated users without tracking
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // Only track analytics for authenticated users to comply with RLS policy
+        if (!user?.id) {
+          return { error: null }; // Return success for unauthenticated users without tracking
+        }
+        
+        const { error } = await supabase
+          .from('analytics')
+          .insert({
+            user_id: user.id,
+            event,
+            details,
+          });
+        return { error };
+      } catch (err) {
+        console.error('Analytics tracking error:', err);
+        return { error: null }; // Don't fail the main operation for analytics
       }
-      
-      const { error } = await supabase
-        .from('analytics')
-        .insert({
-          user_id: user.id,
-          event,
-          details,
-        });
-      return { error };
     },
   },
 
