@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
-import { FileText, Zap, MessageCircle, Menu, X, Moon, Sun } from 'lucide-react';
+import { FileText, Zap, MessageCircle, Menu, X, Moon, Sun, FolderOpen } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { UserMenu } from './auth/UserMenu';
 
 interface HeaderProps {
-  activeTab: 'builder' | 'chat' | 'preview';
-  onTabChange: (tab: 'builder' | 'chat' | 'preview') => void;
+  activeTab: 'manager' | 'builder' | 'chat' | 'preview';
+  onTabChange: (tab: 'manager' | 'builder' | 'chat' | 'preview') => void;
+  showResumeManager?: boolean;
 }
 
-export function Header({ activeTab, onTabChange }: HeaderProps) {
+export function Header({ activeTab, onTabChange, showResumeManager = false }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   const tabs = [
+    ...(showResumeManager ? [{ id: 'manager', label: 'My Resumes', icon: FolderOpen }] : []),
     { id: 'builder', label: 'Builder', icon: FileText },
     { id: 'chat', label: 'AI Assistant', icon: MessageCircle },
     { id: 'preview', label: 'Preview & ATS', icon: Zap }
@@ -51,13 +54,15 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
                 <Icon className="h-4 w-4" />
                 <span className="hidden lg:inline">{label}</span>
                 <span className="lg:hidden">
-                  {id === 'builder' ? 'Build' : id === 'chat' ? 'AI' : 'Preview'}
+                  {id === 'manager' ? 'Resumes' : 
+                   id === 'builder' ? 'Build' : 
+                   id === 'chat' ? 'AI' : 'Preview'}
                 </span>
               </button>
             ))}
           </nav>
 
-          {/* Theme Toggle and Mobile Menu */}
+          {/* Theme Toggle, User Menu and Mobile Menu */}
           <div className="flex items-center space-x-2">
             {/* Theme Toggle */}
             <button
@@ -71,6 +76,9 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
                 <Sun className="h-5 w-5" />
               )}
             </button>
+
+            {/* User Menu */}
+            <UserMenu />
 
             {/* Mobile Menu Button */}
             <button
