@@ -721,7 +721,7 @@ Always use proper markdown formatting in your responses:
 ### Text Emphasis
 - Use **bold text** for important terms, keywords, and emphasis
 - Use *italics* for examples and subtle emphasis
-- Use `code formatting` for technical terms, file names, and specific instructions
+- Use \`code formatting` for technical terms, file names, and specific instructions
 
 ### Lists and Organization
 - Use bullet points (•) for unstructured lists
