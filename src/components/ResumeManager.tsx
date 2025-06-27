@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Plus, Edit3, Trash2, Calendar, Loader, AlertCircle, RefreshCw, Database } from 'lucide-react';
+import { FileText, Plus, Edit3, Trash2, Calendar, Loader, AlertCircle, RefreshCw, Database, Settings } from 'lucide-react';
 import { useResumes } from '../hooks/useResumes';
 import { Resume } from '../types/resume';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,6 +31,7 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
   };
 
   const handleRetry = () => {
+    console.log('Retrying resume load...');
     refreshResumes();
   };
 
@@ -45,6 +46,9 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
       return 'Unknown date';
     }
   };
+
+  // Check environment variables
+  const hasSupabaseConfig = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 
   if (loading) {
     return (
@@ -62,6 +66,9 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
           <div className="text-center">
             <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600 dark:text-blue-400" />
             <p className="text-gray-600 dark:text-gray-400 font-medium">Loading your resumes...</p>
+            <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
+              Connecting to database...
+            </p>
           </div>
         </div>
       </div>
@@ -81,12 +88,37 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
         </div>
 
         <div className="text-center">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md mx-auto">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-lg mx-auto">
             <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-red-900 dark:text-red-100 mb-2">
-              Unable to Load Resumes
+              Database Connection Issue
             </h3>
             <p className="text-red-700 dark:text-red-300 mb-4 text-sm">{error}</p>
+            
+            {/* Environment Check */}
+            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 rounded-lg text-left">
+              <h4 className="font-medium text-red-900 dark:text-red-100 mb-2 text-sm">Configuration Status:</h4>
+              <div className="space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span>Supabase URL:</span>
+                  <span className={hasSupabaseConfig ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                    {import.meta.env.VITE_SUPABASE_URL ? '✓ Configured' : '✗ Missing'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Supabase Key:</span>
+                  <span className={hasSupabaseConfig ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                    {import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓ Configured' : '✗ Missing'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>User Authenticated:</span>
+                  <span className={user ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                    {user ? '✓ Yes' : '✗ No'}
+                  </span>
+                </div>
+              </div>
+            </div>
             
             <div className="space-y-3">
               <button
@@ -102,8 +134,22 @@ export function ResumeManager({ onSelectResume, onCreateNew }: ResumeManagerProp
                 className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
               >
                 <Plus className="h-4 w-4" />
-                <span>Create New Resume</span>
+                <span>Create New Resume (Local)</span>
               </button>
+              
+              {!hasSupabaseConfig && (
+                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <Settings className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-left">
+                      <h4 className="font-medium text-yellow-900 dark:text-yellow-100 text-sm">Setup Required</h4>
+                      <p className="text-yellow-700 dark:text-yellow-300 text-xs mt-1">
+                        Please configure your Supabase environment variables in the .env file to enable resume storage.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
