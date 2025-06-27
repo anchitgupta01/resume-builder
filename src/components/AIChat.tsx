@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader, Key, Sparkles, Zap, TrendingUp } from 'lucide-react';
+import { Send, Bot, User, Loader, Key, Sparkles, Zap, TrendingUp, CheckCircle } from 'lucide-react';
 import { ChatMessage, Resume } from '../types/resume';
 import { openaiService } from '../utils/openaiService';
 import { resumeTemplates } from '../data/resumeTemplates';
@@ -37,7 +37,8 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       'fix my resume', 'improve my resume', 'optimize my resume', 'fix resume',
       'improve resume', 'optimize resume', 'make my resume better', 'enhance my resume',
       'increase ats score', 'improve ats score', 'optimize for ats', 'fix ats',
-      'make resume ats friendly', 'improve resume score'
+      'make resume ats friendly', 'improve resume score', 'update my resume',
+      'enhance resume', 'better resume', 'optimize resume'
     ];
     
     return fixKeywords.some(keyword => 
@@ -46,6 +47,17 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
   };
 
   const handleResumeFixing = async (userMessage: string) => {
+    if (!onResumeChange) {
+      const errorMsg: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: "❌ **Resume modification is not available in this context.** Please ensure you're using the AI assistant from the main application where resume changes can be applied.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMsg]);
+      return;
+    }
+
     setIsFixingResume(true);
     
     try {
@@ -71,9 +83,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
       const fixResult = await openaiService.fixResumeForATS(resume);
       
       // Apply the improvements to the resume
-      if (onResumeChange) {
-        onResumeChange(fixResult.improvedResume);
-      }
+      onResumeChange(fixResult.improvedResume);
 
       // Create success message
       const successMsg: ChatMessage = {
@@ -188,6 +198,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
   };
 
   const hasApiKey = !!import.meta.env.VITE_OPENAI_API_KEY;
+  const canModifyResume = !!onResumeChange;
 
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col p-4 sm:p-6">
@@ -203,7 +214,15 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                   AI Resume Assistant
                 </h2>
-                <p className="text-gray-600 text-sm">Powered by OpenAI • Can automatically fix and optimize resumes</p>
+                <div className="flex items-center space-x-2">
+                  <p className="text-gray-600 text-sm">Powered by OpenAI</p>
+                  {canModifyResume && hasApiKey && (
+                    <div className="flex items-center space-x-1 text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Can modify resume</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -244,6 +263,21 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                   OpenAI Platform
                 </a>
               </p>
+            </div>
+          )}
+
+          {/* Resume Modification Status */}
+          {!canModifyResume && (
+            <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <div className="flex items-center space-x-3">
+                <Key className="h-5 w-5 text-amber-600" />
+                <div>
+                  <h4 className="font-medium text-amber-900">Limited Functionality</h4>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Resume modification is not available in this context. I can provide advice but cannot directly edit your resume.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -326,12 +360,12 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                 <button
                   key={index}
                   onClick={() => handleQuickQuestion(question)}
-                  disabled={!hasApiKey && question.includes('Fix my resume')}
+                  disabled={(!hasApiKey || !canModifyResume) && question.includes('Fix my resume')}
                   className={`px-3 py-2 text-sm rounded-lg transition-colors text-left flex items-center space-x-2 ${
                     question.includes('Fix my resume') 
                       ? 'bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 text-purple-800 font-medium'
                       : 'bg-gray-100 hover:bg-gray-200'
-                  } ${!hasApiKey && question.includes('Fix my resume') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${(!hasApiKey || !canModifyResume) && question.includes('Fix my resume') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {question.includes('Fix my resume') && <Zap className="h-4 w-4" />}
                   {question.includes('ATS') && <TrendingUp className="h-4 w-4" />}
@@ -349,7 +383,13 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={hasApiKey ? "Ask me to fix your resume or any question about improving it..." : "Configure OpenAI API key to enable AI features..."}
+              placeholder={
+                !hasApiKey 
+                  ? "Configure OpenAI API key to enable AI features..." 
+                  : !canModifyResume
+                  ? "Ask me questions about resume improvement (modification not available)..."
+                  : "Ask me to fix your resume or any question about improving it..."
+              }
               className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
               rows={2}
               disabled={isLoading || isFixingResume || !hasApiKey}
@@ -367,6 +407,12 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
           {!hasApiKey && (
             <p className="text-xs text-gray-500 mt-2">
               💡 Add your OpenAI API key to unlock AI-powered resume fixing and analysis
+            </p>
+          )}
+          
+          {hasApiKey && !canModifyResume && (
+            <p className="text-xs text-amber-600 mt-2">
+              ⚠️ Resume modification is not available in this context - I can provide advice only
             </p>
           )}
         </div>
