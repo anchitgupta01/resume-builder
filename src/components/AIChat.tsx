@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader, Key, Sparkles, Zap, TrendingUp, CheckCircle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { ChatMessage, Resume } from '../types/resume';
 import { openaiService } from '../utils/openaiService';
 import { resumeTemplates } from '../data/resumeTemplates';
@@ -314,7 +315,45 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap text-sm sm:text-base">{message.content}</p>
+                  <div className="text-sm sm:text-base">
+                    <ReactMarkdown
+                      className={`prose prose-sm max-w-none ${
+                        message.type === 'user' ? 'prose-invert' : ''
+                      }`}
+                      components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="mb-2 last:mb-0 pl-4">{children}</ul>,
+                        ol: ({ children }) => <ol className="mb-2 last:mb-0 pl-4">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        code: ({ children }) => (
+                          <code className={`px-1 py-0.5 rounded text-xs font-mono ${
+                            message.type === 'user' 
+                              ? 'bg-blue-500 text-blue-100' 
+                              : 'bg-gray-200 text-gray-800'
+                          }`}>
+                            {children}
+                          </code>
+                        ),
+                        h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-bold mb-1">{children}</h3>,
+                        h4: ({ children }) => <h4 className="text-sm font-semibold mb-1">{children}</h4>,
+                        blockquote: ({ children }) => (
+                          <blockquote className={`border-l-4 pl-4 my-2 ${
+                            message.type === 'user' 
+                              ? 'border-blue-300' 
+                              : 'border-gray-300'
+                          }`}>
+                            {children}
+                          </blockquote>
+                        )
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
                   <p
                     className={`text-xs mt-1 sm:mt-2 ${
                       message.type === 'user' ? 'text-blue-200' : 'text-gray-500'
