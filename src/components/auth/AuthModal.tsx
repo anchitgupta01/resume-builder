@@ -178,7 +178,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           
           // Check if email confirmation is required
           if (data && !data.session && data.user) {
-            setMessage('Success! Please check your email for a confirmation link. You must click the link before you can sign in.');
+            setMessage('Success! You can sign in now.');
           } else if (data && data.session) {
             // User is automatically signed in
             setMessage('Account created successfully! Welcome!');
