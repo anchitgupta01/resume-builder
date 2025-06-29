@@ -1,8 +1,17 @@
 {
   "name": "ai-resume-builder",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "AI-powered resume builder with ATS optimization and real-time feedback",
+  "keywords": ["resume", "ai", "ats", "career", "job-search", "react", "typescript"],
+  "author": "AI Resume Builder Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ai-resume-builder.git"
+  },
+  "homepage": "https://ai-resume-builder-pro.netlify.app",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

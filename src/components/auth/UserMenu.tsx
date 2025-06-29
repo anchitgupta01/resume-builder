@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { User, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function UserMenu() {
@@ -21,12 +21,6 @@ export function UserMenu() {
   const handleSignOut = async () => {
     await signOut();
     setIsOpen(false);
-  };
-
-  const handleSettings = () => {
-    setIsOpen(false);
-    // TODO: Implement settings page
-    console.log('Settings clicked');
   };
 
   if (!user) return null;
@@ -62,14 +56,6 @@ export function UserMenu() {
 
           {/* Menu Items */}
           <div className="py-1">
-            <button
-              onClick={handleSettings}
-              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors"
-            >
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </button>
-
             <button
               onClick={handleSignOut}
               className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors"
