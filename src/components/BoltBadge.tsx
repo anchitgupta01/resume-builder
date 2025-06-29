@@ -42,7 +42,7 @@ export function BoltBadge({
       className={`fixed ${positionClasses[position]} ${sizeClasses[size].badge} rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 z-50 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700`}
       title="Built with Bolt - AI-powered full-stack development"
     >
-      <Zap className={`${sizeClasses[size].icon} text-white`} />
+      
     </a>
   );
 }
