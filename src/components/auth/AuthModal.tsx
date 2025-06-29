@@ -427,9 +427,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
 
             {/* Email Confirmation Notice for Signup */}
             {mode === 'signup' && !message && !error && (
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                
-              </div>
+              
             )}
 
             {/* Submit Button */}
