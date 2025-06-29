@@ -429,7 +429,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             {mode === 'signup' && !message && !error && (
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <div className="flex items-start space-x-2">
-                  <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 </div>
               </div>
             )}
