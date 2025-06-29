@@ -6,6 +6,8 @@ A modern, AI-powered resume builder that helps you create professional, ATS-opti
 
 **[Try it now on Netlify →](https://ai-resume-builder-pro.netlify.app)**
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/your-site-id/deploy-status)](https://app.netlify.com/sites/ai-resume-builder-pro/deploys)
+
 ## ✨ Features
 
 ### 🤖 AI-Powered Assistance
@@ -143,8 +145,23 @@ This project is configured for easy deployment on Netlify:
 2. **Set build settings**:
    - Build command: `npm run build`
    - Publish directory: `dist`
-3. **Add environment variables** in Netlify dashboard
+3. **Add environment variables** in Netlify dashboard:
+   ```
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_OPENAI_API_KEY=your_openai_api_key
+   ```
 4. **Deploy**: Netlify will automatically build and deploy your site
+
+### Environment Variables for Netlify
+
+In your Netlify dashboard, go to Site settings > Environment variables and add:
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `VITE_SUPABASE_URL` | Your Supabase project URL | Required for database functionality |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon key | Required for authentication |
+| `VITE_OPENAI_API_KEY` | Your OpenAI API key | Required for AI features |
 
 ### Manual Deployment
 
@@ -209,3 +226,27 @@ If you have any questions or need help:
 **Built with ❤️ using [Bolt](https://bolt.new) - The AI-powered full-stack development platform**
 
 ⭐ **Star this repository if you found it helpful!**
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **"Supabase not configured" error**
+   - Ensure you've added the environment variables in Netlify
+   - Check that your Supabase project is active
+   - Verify the URL and key are correct
+
+2. **AI features not working**
+   - Add your OpenAI API key to environment variables
+   - Ensure you have credits in your OpenAI account
+
+3. **Build failures**
+   - Check that all environment variables are set
+   - Ensure Node.js version is 18 or higher
+
+### Getting Help
+
+If you encounter issues:
+1. Check the browser console for error messages
+2. Verify all environment variables are set correctly
+3. Create an issue on GitHub with detailed error information
