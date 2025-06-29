@@ -21,6 +21,18 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
 
   const { signIn, signUp, resetPassword } = useAuth();
 
+  // Define resetForm function before useEffect hooks
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setConfirmPassword('');
+    setError(null);
+    setMessage(null);
+    setShowPassword(false);
+    setLoading(false); // Ensure loading is reset
+  };
+
   // Reset mode when initialMode changes
   useEffect(() => {
     setMode(initialMode);
@@ -34,17 +46,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setFullName('');
-    setConfirmPassword('');
-    setError(null);
-    setMessage(null);
-    setShowPassword(false);
-    setLoading(false); // Ensure loading is reset
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
