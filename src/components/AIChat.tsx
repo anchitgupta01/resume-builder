@@ -270,7 +270,7 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 p-1 rounded-lg flex-shrink-0">
-                <BoltIcon />
+               
               </div>
               <div className="min-w-0">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
