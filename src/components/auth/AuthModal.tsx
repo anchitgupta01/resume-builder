@@ -36,8 +36,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
 
     try {
       if (mode === 'signin') {
+        console.log('🔐 AuthModal: Attempting sign in for:', email);
         const { error } = await signIn(email, password);
         if (error) {
+          console.error('❌ AuthModal: Sign in error:', error);
           // Handle specific error cases
           if (error.message.includes('Email not confirmed')) {
             setError('Please check your email and click the confirmation link before signing in.');
@@ -45,13 +47,33 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             setError('Invalid email or password. Please check your credentials and try again.');
           } else if (error.message.includes('not configured') || error.message.includes('configuration error')) {
             setError('Authentication service is temporarily unavailable. Please try again later or contact support.');
+          } else if (error.message.includes('Network error')) {
+            setError('Network connection issue. Please check your internet connection and try again.');
+          } else if (error.message.includes('rate limit') || error.message.includes('too many')) {
+            setError('Too many login attempts. Please wait a moment and try again.');
           } else {
             setError(error.message);
           }
         } else {
+          console.log('✅ AuthModal: Sign in successful');
           onClose();
         }
       } else if (mode === 'signup') {
+        console.log('🔐 AuthModal: Attempting sign up for:', email);
+        
+        // Client-side validation
+        if (!fullName.trim()) {
+          setError('Full name is required');
+          return;
+        }
+        if (!email.trim()) {
+          setError('Email is required');
+          return;
+        }
+        if (!password) {
+          setError('Password is required');
+          return;
+        }
         if (password !== confirmPassword) {
           setError('Passwords do not match');
           return;
@@ -63,30 +85,51 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
         
         const { error } = await signUp(email, password, fullName);
         if (error) {
+          console.error('❌ AuthModal: Sign up error:', error);
           if (error.message.includes('User already registered') || error.message.includes('already exists')) {
             setError('An account with this email already exists. Please sign in instead.');
           } else if (error.message.includes('not configured') || error.message.includes('configuration error')) {
             setError('Account creation is temporarily unavailable. Please try again later or contact support.');
+          } else if (error.message.includes('Network error')) {
+            setError('Network connection issue. Please check your internet connection and try again.');
+          } else if (error.message.includes('rate limit') || error.message.includes('too many')) {
+            setError('Too many signup attempts. Please wait a moment and try again.');
+          } else if (error.message.includes('Invalid email')) {
+            setError('Please enter a valid email address.');
           } else {
             setError(error.message);
           }
         } else {
+          console.log('✅ AuthModal: Sign up successful');
           setMessage('Success! Please check your email for a confirmation link. You must click the link before you can sign in.');
         }
       } else if (mode === 'reset') {
+        console.log('🔐 AuthModal: Attempting password reset for:', email);
+        
+        if (!email.trim()) {
+          setError('Email is required for password reset');
+          return;
+        }
+        
         const { error } = await resetPassword(email);
         if (error) {
+          console.error('❌ AuthModal: Password reset error:', error);
           if (error.message.includes('not configured')) {
             setError('Password reset is temporarily unavailable. Please contact support.');
+          } else if (error.message.includes('Network error')) {
+            setError('Network connection issue. Please check your internet connection and try again.');
+          } else if (error.message.includes('rate limit') || error.message.includes('too many')) {
+            setError('Too many reset attempts. Please wait a moment and try again.');
           } else {
             setError(error.message);
           }
         } else {
+          console.log('✅ AuthModal: Password reset email sent');
           setMessage('Password reset email sent! Please check your inbox for instructions.');
         }
       }
     } catch (err) {
-      console.error('Auth modal error:', err);
+      console.error('❌ AuthModal: Unexpected error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -161,7 +204,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             {mode === 'signup' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Full Name
+                  Full Name *
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -171,6 +214,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
                     placeholder="Enter your full name"
+                    autoComplete="name"
                     required
                   />
                 </div>
@@ -180,7 +224,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
+                Email Address *
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -200,7 +244,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             {mode !== 'reset' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Password
+                  Password *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -222,6 +266,11 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                {mode === 'signup' && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Password must be at least 6 characters long
+                  </p>
+                )}
               </div>
             )}
 
@@ -229,7 +278,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             {mode === 'signup' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Confirm Password
+                  Confirm Password *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />

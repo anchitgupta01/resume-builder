@@ -34,7 +34,13 @@ console.log('Key format valid:', isValidKey);
 
 // Create Supabase client only if both URL and key are valid
 export const supabase = (isValidUrl && isValidKey) 
-  ? createClient<Database>(supabaseUrl, supabaseAnonKey)
+  ? createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      }
+    })
   : null;
 
 // Test the connection only if properly configured
@@ -109,19 +115,35 @@ export const auth = {
       return { 
         data: null, 
         error: { 
-          message: 'Authentication service is not configured. Please contact support.' 
+          message: 'Authentication service is not configured. Please contact support or try again later.' 
         } 
       };
     }
     
     try {
       console.log('🔐 Auth: Attempting signup for:', email);
+      
+      // Validate inputs
+      if (!email || !password || !fullName) {
+        return {
+          data: null,
+          error: { message: 'All fields are required for signup.' }
+        };
+      }
+      
+      if (password.length < 6) {
+        return {
+          data: null,
+          error: { message: 'Password must be at least 6 characters long.' }
+        };
+      }
+      
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           data: {
-            full_name: fullName,
+            full_name: fullName.trim(),
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -131,19 +153,45 @@ export const auth = {
         console.error('❌ Auth signup error:', error.message);
         
         // Provide more user-friendly error messages
-        if (error.message.includes('Invalid API key')) {
+        if (error.message.includes('Invalid API key') || error.message.includes('API key')) {
           return { data: null, error: { message: 'Authentication service configuration error. Please contact support.' } };
         }
-        if (error.message.includes('User already registered')) {
+        if (error.message.includes('User already registered') || error.message.includes('already been registered')) {
           return { data: null, error: { message: 'An account with this email already exists. Please sign in instead.' } };
         }
+        if (error.message.includes('Invalid email')) {
+          return { data: null, error: { message: 'Please enter a valid email address.' } };
+        }
+        if (error.message.includes('Password')) {
+          return { data: null, error: { message: 'Password must be at least 6 characters long.' } };
+        }
+        if (error.message.includes('rate limit') || error.message.includes('too many')) {
+          return { data: null, error: { message: 'Too many signup attempts. Please wait a moment and try again.' } };
+        }
+        
+        // Return the original error message if we don't have a specific handler
+        return { data: null, error: { message: error.message } };
       } else {
-        console.log('✅ Auth signup successful');
+        console.log('✅ Auth signup successful for:', email);
+        
+        // Check if email confirmation is required
+        if (data.user && !data.session) {
+          console.log('📧 Email confirmation required for:', email);
+        }
       }
       
-      return { data, error };
+      return { data, error: null };
     } catch (err: any) {
       console.error('❌ Auth signup exception:', err);
+      
+      // Handle network errors
+      if (err.message && err.message.includes('fetch')) {
+        return { 
+          data: null, 
+          error: { message: 'Network error. Please check your internet connection and try again.' } 
+        };
+      }
+      
       return { 
         data: null, 
         error: { message: 'Authentication service temporarily unavailable. Please try again later.' } 
@@ -164,8 +212,17 @@ export const auth = {
     
     try {
       console.log('🔐 Auth: Attempting signin for:', email);
+      
+      // Validate inputs
+      if (!email || !password) {
+        return {
+          data: null,
+          error: { message: 'Email and password are required.' }
+        };
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
       
@@ -176,19 +233,32 @@ export const auth = {
         if (error.message.includes('Invalid API key')) {
           return { data: null, error: { message: 'Authentication service configuration error. Please contact support.' } };
         }
-        if (error.message.includes('Invalid login credentials')) {
+        if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid email or password')) {
           return { data: null, error: { message: 'Invalid email or password. Please check your credentials.' } };
         }
         if (error.message.includes('Email not confirmed')) {
           return { data: null, error: { message: 'Please check your email and click the confirmation link before signing in.' } };
         }
+        if (error.message.includes('rate limit') || error.message.includes('too many')) {
+          return { data: null, error: { message: 'Too many login attempts. Please wait a moment and try again.' } };
+        }
+        
+        return { data: null, error: { message: error.message } };
       } else {
         console.log('✅ Auth signin successful for:', email);
       }
       
-      return { data, error };
+      return { data, error: null };
     } catch (err: any) {
       console.error('❌ Auth signin exception:', err);
+      
+      if (err.message && err.message.includes('fetch')) {
+        return { 
+          data: null, 
+          error: { message: 'Network error. Please check your internet connection and try again.' } 
+        };
+      }
+      
       return { 
         data: null, 
         error: { message: 'Authentication service temporarily unavailable. Please try again later.' } 
@@ -229,17 +299,31 @@ export const auth = {
     
     try {
       console.log('🔐 Auth: Resetting password for:', email);
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      
+      if (!email) {
+        return {
+          data: null,
+          error: { message: 'Email address is required for password reset.' }
+        };
+      }
+      
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
       
       if (error) {
         console.error('❌ Auth password reset error:', error);
+        
+        if (error.message.includes('rate limit') || error.message.includes('too many')) {
+          return { data: null, error: { message: 'Too many reset attempts. Please wait a moment and try again.' } };
+        }
+        
+        return { data: null, error: { message: error.message } };
       } else {
         console.log('✅ Auth password reset email sent');
       }
       
-      return { data, error };
+      return { data, error: null };
     } catch (err: any) {
       console.error('❌ Auth password reset exception:', err);
       return { 
@@ -259,17 +343,26 @@ export const auth = {
     
     try {
       console.log('🔐 Auth: Updating password');
+      
+      if (!password || password.length < 6) {
+        return {
+          data: null,
+          error: { message: 'Password must be at least 6 characters long.' }
+        };
+      }
+      
       const { data, error } = await supabase.auth.updateUser({
         password,
       });
       
       if (error) {
         console.error('❌ Auth password update error:', error);
+        return { data: null, error: { message: error.message } };
       } else {
         console.log('✅ Auth password update successful');
       }
       
-      return { data, error };
+      return { data, error: null };
     } catch (err: any) {
       console.error('❌ Auth password update exception:', err);
       return { 
