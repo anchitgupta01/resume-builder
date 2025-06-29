@@ -59,10 +59,11 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
       const contentWidth = pageWidth - (margin * 2);
       let currentY = margin;
 
-      // Colors
+      // Colors matching the template
       const primaryColor = [0, 0, 0]; // Black
       const grayColor = [100, 100, 100]; // Gray for secondary text
       const lightGrayColor = [150, 150, 150]; // Light gray for lines
+      const accentColor = [59, 130, 246]; // Blue accent
 
       // Helper function to add text with word wrapping
       const addText = (
@@ -94,14 +95,14 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
         return y + (lines.length * lineHeight);
       };
 
-      // Helper function to add section header
+      // Helper function to add section header with underline
       const addSectionHeader = (title: string, y: number) => {
         if (y + 15 > pageHeight - margin) {
           pdf.addPage();
           y = margin;
         }
         
-        y = addText(title, margin, y, contentWidth, 12, 'bold', primaryColor);
+        y = addText(title.toUpperCase(), margin, y, contentWidth, 11, 'bold', primaryColor);
         
         // Add underline
         pdf.setDrawColor(lightGrayColor[0], lightGrayColor[1], lightGrayColor[2]);
@@ -111,32 +112,39 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
         return y + 8;
       };
 
-      // HEADER SECTION - Centered
+      // HEADER SECTION - Centered like the template
       if (resume.personalInfo.fullName) {
-        currentY = addText(resume.personalInfo.fullName.toUpperCase(), pageWidth / 2, currentY + 10, contentWidth, 18, 'bold', primaryColor, 'center');
+        currentY = addText(resume.personalInfo.fullName.toUpperCase(), pageWidth / 2, currentY + 10, contentWidth, 20, 'bold', primaryColor, 'center');
         currentY += 3;
       }
 
-      // Job title from first experience or a default
+      // Job title from first experience (like the template)
       if (resume.experience.length > 0) {
-        currentY = addText(resume.experience[0].position, pageWidth / 2, currentY, contentWidth, 12, 'normal', grayColor, 'center');
+        currentY = addText(resume.experience[0].position, pageWidth / 2, currentY, contentWidth, 12, 'normal', accentColor, 'center');
         currentY += 8;
       }
 
-      // Contact information - centered, on one line if possible
+      // Contact information - centered, clean format like template
       const contactInfo = [];
       if (resume.personalInfo.email) contactInfo.push(resume.personalInfo.email);
       if (resume.personalInfo.phone) contactInfo.push(resume.personalInfo.phone);
       if (resume.personalInfo.location) contactInfo.push(resume.personalInfo.location);
-      if (resume.personalInfo.linkedin) contactInfo.push(resume.personalInfo.linkedin);
 
       if (contactInfo.length > 0) {
         const contactText = contactInfo.join(' | ');
         currentY = addText(contactText, pageWidth / 2, currentY, contentWidth, 10, 'normal', grayColor, 'center');
-        currentY += 12;
+        currentY += 3;
       }
 
-      // SUMMARY/PROFILE
+      // Professional links
+      if (resume.personalInfo.linkedin) {
+        currentY = addText(resume.personalInfo.linkedin, pageWidth / 2, currentY, contentWidth, 10, 'normal', accentColor, 'center');
+        currentY += 12;
+      } else {
+        currentY += 8;
+      }
+
+      // SUMMARY/PROFILE (if exists)
       if (resume.personalInfo.summary && resume.personalInfo.summary.trim()) {
         currentY = addText(resume.personalInfo.summary, margin, currentY, contentWidth, 11, 'normal', primaryColor);
         currentY += 12;
@@ -155,19 +163,19 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
             currentY = margin;
           }
           
-          // Job title - bold
+          // Job title - bold, left aligned
           currentY = addText(exp.position, margin, currentY, contentWidth * 0.7, 12, 'bold', primaryColor);
           
-          // Date range - right aligned
+          // Date range - right aligned (like template)
           const dateText = `${exp.startDate} - ${exp.current ? 'Present' : exp.endDate}`;
           addText(dateText, pageWidth - margin, currentY - 4, 50, 10, 'normal', grayColor, 'right');
           currentY += 2;
           
-          // Company name - italic
+          // Company name - italic, gray (like template)
           currentY = addText(exp.company, margin, currentY, contentWidth, 11, 'italic', grayColor);
           currentY += 4;
           
-          // Description and achievements
+          // Description and achievements as bullet points
           const allPoints = [...exp.description, ...exp.achievements];
           allPoints.forEach(point => {
             if (point && point.trim()) {
@@ -182,18 +190,12 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
         currentY += 5;
       }
 
-      // CORE SKILLS
+      // CORE SKILLS (like template - as paragraph)
       if (resume.skills.length > 0) {
         currentY = addSectionHeader('Core Skills', currentY);
         
-        const skillsByCategory = resume.skills.reduce((acc, skill) => {
-          if (!acc[skill.category]) acc[skill.category] = [];
-          acc[skill.category].push(skill.name);
-          return acc;
-        }, {} as Record<string, string[]>);
-
-        // Combine all skills into one paragraph
-        const allSkills = Object.values(skillsByCategory).flat();
+        // Combine all skills into one paragraph (like template)
+        const allSkills = resume.skills.map(skill => skill.name);
         const skillsText = allSkills.join(', ');
         
         currentY = addText(skillsText, margin, currentY, contentWidth, 11, 'normal', primaryColor);
@@ -213,16 +215,16 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
             currentY = margin;
           }
           
-          // Institution name
+          // Institution name - bold
           currentY = addText(edu.institution, margin, currentY, contentWidth * 0.7, 12, 'bold', primaryColor);
           
-          // Graduation date - right aligned
+          // Graduation date - right aligned (like template)
           if (edu.graduationDate) {
             addText(edu.graduationDate, pageWidth - margin, currentY - 4, 50, 10, 'normal', grayColor, 'right');
           }
           currentY += 2;
           
-          // Degree and field
+          // Degree and field - italic (like template)
           const degreeText = `${edu.degree}${edu.field ? ` ${edu.field}` : ''}`;
           currentY = addText(degreeText, margin, currentY, contentWidth, 11, 'italic', grayColor);
           
@@ -255,7 +257,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
             currentY = margin;
           }
           
-          // Project name
+          // Project name - bold
           currentY = addText(project.name, margin, currentY, contentWidth, 12, 'bold', primaryColor);
           currentY += 2;
           
@@ -276,14 +278,14 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
           if (project.github) links.push(`GitHub: ${project.github}`);
           
           if (links.length > 0) {
-            currentY = addText(links.join(' | '), margin, currentY, contentWidth, 9, 'normal', grayColor);
+            currentY = addText(links.join(' | '), margin, currentY, contentWidth, 9, 'normal', accentColor);
           }
           
           currentY += 4;
         });
       }
 
-      // Save the PDF
+      // Save the PDF with proper filename
       const fileName = `${resume.personalInfo.fullName?.replace(/\s+/g, '_') || 'Resume'}.pdf`;
       pdf.save(fileName);
       
@@ -595,10 +597,10 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
               {!isResumeEmpty() && (
                 <div className="mt-3 text-center">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    ✨ Clean professional template with optimal spacing
+                    ✨ Clean professional template matching your reference
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    📄 ATS-optimized formatting
+                    📄 ATS-optimized formatting with smart spacing
                   </p>
                 </div>
               )}
@@ -652,7 +654,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                     
                     {/* Job title from experience */}
                     {resume.experience.length > 0 && (
-                      <p className="text-lg text-gray-600 mb-4">
+                      <p className="text-lg text-blue-600 mb-4">
                         {resume.experience[0].position}
                       </p>
                     )}
