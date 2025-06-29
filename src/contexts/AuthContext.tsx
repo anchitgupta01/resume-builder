@@ -34,6 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           window.location.reload();
           return;
         }
+        
+        // For other errors, just log them but don't crash the app
+        console.log('⚠️ AuthProvider: Authentication service may not be configured properly');
       } else {
         console.log('👤 AuthProvider: Initial user:', user?.email || 'none');
       }
@@ -41,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }).catch(err => {
       console.error('❌ AuthProvider: Exception getting initial user:', err);
+      console.log('⚠️ AuthProvider: Continuing without authentication');
       setUser(null);
       setLoading(false);
     });

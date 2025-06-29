@@ -284,7 +284,7 @@ export const auth = {
       console.log('⚠️ Auth: Supabase not configured, returning null user');
       return { 
         data: { user: null }, 
-        error: { message: 'Authentication service not configured' } 
+        error: null // Return null error instead of an error object when not configured
       };
     }
     
@@ -321,7 +321,7 @@ export const auth = {
       
       return { 
         data: { user: null }, 
-        error: { message: 'Failed to get user authentication status' } 
+        error: null // Return null error for graceful handling when service is unavailable
       };
     }
   },
