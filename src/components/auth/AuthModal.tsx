@@ -34,10 +34,28 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
     setError(null);
     setMessage(null);
 
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      setError('Request timed out. Please check your internet connection and try again.');
+    }, 30000); // 30 second timeout
+
     try {
       if (mode === 'signin') {
         console.log('🔐 AuthModal: Attempting sign in for:', email);
-        const { error } = await signIn(email, password);
+        
+        // Client-side validation
+        if (!email.trim()) {
+          setError('Email is required');
+          return;
+        }
+        if (!password) {
+          setError('Password is required');
+          return;
+        }
+
+        const { data, error } = await signIn(email.trim(), password);
+        
         if (error) {
           console.error('❌ AuthModal: Sign in error:', error);
           // Handle specific error cases
@@ -56,6 +74,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           }
         } else {
           console.log('✅ AuthModal: Sign in successful');
+          clearTimeout(timeoutId);
           onClose();
         }
       } else if (mode === 'signup') {
@@ -82,8 +101,16 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           setError('Password must be at least 6 characters');
           return;
         }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+          setError('Please enter a valid email address');
+          return;
+        }
         
-        const { error } = await signUp(email, password, fullName);
+        const { data, error } = await signUp(email.trim(), password, fullName.trim());
+        
         if (error) {
           console.error('❌ AuthModal: Sign up error:', error);
           if (error.message.includes('User already registered') || error.message.includes('already exists')) {
@@ -96,12 +123,27 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             setError('Too many signup attempts. Please wait a moment and try again.');
           } else if (error.message.includes('Invalid email')) {
             setError('Please enter a valid email address.');
+          } else if (error.message.includes('Database error')) {
+            setError('There was an issue creating your account. Please try again in a moment.');
           } else {
             setError(error.message);
           }
         } else {
           console.log('✅ AuthModal: Sign up successful');
-          setMessage('Success! Please check your email for a confirmation link. You must click the link before you can sign in.');
+          clearTimeout(timeoutId);
+          
+          // Check if email confirmation is required
+          if (data && !data.session && data.user) {
+            setMessage('Success! Please check your email for a confirmation link. You must click the link before you can sign in.');
+          } else if (data && data.session) {
+            // User is automatically signed in
+            setMessage('Account created successfully! Welcome!');
+            setTimeout(() => {
+              onClose();
+            }, 1500);
+          } else {
+            setMessage('Account created successfully! Please check your email for a confirmation link.');
+          }
         }
       } else if (mode === 'reset') {
         console.log('🔐 AuthModal: Attempting password reset for:', email);
@@ -110,8 +152,16 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           setError('Email is required for password reset');
           return;
         }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+          setError('Please enter a valid email address');
+          return;
+        }
         
-        const { error } = await resetPassword(email);
+        const { data, error } = await resetPassword(email.trim());
+        
         if (error) {
           console.error('❌ AuthModal: Password reset error:', error);
           if (error.message.includes('not configured')) {
@@ -125,13 +175,25 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           }
         } else {
           console.log('✅ AuthModal: Password reset email sent');
+          clearTimeout(timeoutId);
           setMessage('Password reset email sent! Please check your inbox for instructions.');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ AuthModal: Unexpected error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      
+      // Handle specific error types
+      if (err.name === 'AbortError') {
+        setError('Request was cancelled. Please try again.');
+      } else if (err.message && err.message.includes('fetch')) {
+        setError('Network connection issue. Please check your internet connection and try again.');
+      } else if (err.message && err.message.includes('timeout')) {
+        setError('Request timed out. Please check your internet connection and try again.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -191,6 +253,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              disabled={loading}
             >
               <X className="h-6 w-6" />
             </button>
@@ -216,6 +279,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                     placeholder="Enter your full name"
                     autoComplete="name"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -236,6 +300,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                   placeholder="Enter your email"
                   autoComplete="email"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -257,11 +322,13 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                     autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                     required
                     minLength={6}
+                    disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    disabled={loading}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -291,6 +358,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                     autoComplete="new-password"
                     required
                     minLength={6}
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -339,7 +407,9 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             >
               {loading && <Loader className="h-5 w-5 animate-spin" />}
               <span>
-                {loading && 'Processing...'}
+                {loading && mode === 'signin' && 'Signing In...'}
+                {loading && mode === 'signup' && 'Creating Account...'}
+                {loading && mode === 'reset' && 'Sending Reset Link...'}
                 {!loading && mode === 'signin' && 'Sign In'}
                 {!loading && mode === 'signup' && 'Create Account'}
                 {!loading && mode === 'reset' && 'Send Reset Link'}
@@ -355,6 +425,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                   <button
                     onClick={() => switchMode('reset')}
                     className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm transition-colors"
+                    disabled={loading}
                   >
                     Forgot your password?
                   </button>
@@ -374,6 +445,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                 <button
                   onClick={() => switchMode('signup')}
                   className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
+                  disabled={loading}
                 >
                   Create a new account
                 </button>
@@ -396,6 +468,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                 <button
                   onClick={() => switchMode('signin')}
                   className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
+                  disabled={loading}
                 >
                   Sign in to your account
                 </button>
@@ -418,6 +491,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                 <button
                   onClick={() => switchMode('signin')}
                   className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
+                  disabled={loading}
                 >
                   Back to sign in
                 </button>
