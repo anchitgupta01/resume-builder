@@ -19,8 +19,32 @@ export function UserMenu() {
   }, []);
 
   const handleSignOut = async () => {
-    await signOut();
-    setIsOpen(false);
+    try {
+      console.log('🔐 UserMenu: Initiating logout');
+      setIsOpen(false);
+      
+      // Call signOut and wait for it to complete
+      const { error } = await signOut();
+      
+      if (error) {
+        console.error('❌ UserMenu: Logout error:', error);
+        // Even if there's an error, we should still clear local state
+        // The auth context should handle this, but let's be explicit
+      } else {
+        console.log('✅ UserMenu: Logout successful');
+      }
+      
+      // Force a page reload to ensure clean state
+      // This is a fallback to ensure the user is properly logged out
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+      
+    } catch (err) {
+      console.error('❌ UserMenu: Logout exception:', err);
+      // Force reload even on error to ensure clean state
+      window.location.reload();
+    }
   };
 
   if (!user) return null;

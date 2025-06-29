@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../contexts/ThemeContext';
+import { Zap } from 'lucide-react';
 
 interface BoltBadgeProps {
   position?: 'top-right' | 'bottom-right' | 'top-left' | 'bottom-left';
@@ -10,24 +10,19 @@ export function BoltBadge({
   position = 'top-right', 
   size = 'medium'
 }: BoltBadgeProps) {
-  const { theme } = useTheme();
-
   // Size mappings
   const sizeClasses = {
     small: {
-      badge: 'h-14 w-14',
-      innerCircle: 'h-12 w-12',
-      svg: 'h-8 w-8'
+      badge: 'h-12 w-12',
+      icon: 'h-6 w-6'
     },
     medium: {
-      badge: 'h-20 w-20',
-      innerCircle: 'h-16 w-16',
-      svg: 'h-12 w-12'
+      badge: 'h-16 w-16',
+      icon: 'h-8 w-8'
     },
     large: {
-      badge: 'h-24 w-24',
-      innerCircle: 'h-20 w-20',
-      svg: 'h-16 w-16'
+      badge: 'h-20 w-20',
+      icon: 'h-10 w-10'
     }
   };
 
@@ -39,24 +34,15 @@ export function BoltBadge({
     'bottom-left': 'bottom-4 left-4'
   };
 
-  // Theme-based SVG selection
-  const svgPath = theme === 'dark' ? '/src/assets/botl-white.svg' : '/src/assets/bolt-black.svg';
-
   return (
     <a 
       href="https://bolt.new/" 
       target="_blank" 
       rel="noopener noreferrer"
-      className={`fixed ${positionClasses[position]} ${sizeClasses[size].badge} rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 z-50 bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700`}
-      title="Built with Bolt"
+      className={`fixed ${positionClasses[position]} ${sizeClasses[size].badge} rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 z-50 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700`}
+      title="Built with Bolt - AI-powered full-stack development"
     >
-      <div className={`${sizeClasses[size].innerCircle} rounded-full flex items-center justify-center`}>
-        <img 
-          src={svgPath} 
-          alt="Bolt Logo" 
-          className={`${sizeClasses[size].svg} object-contain`}
-        />
-      </div>
+      <Zap className={`${sizeClasses[size].icon} text-white`} />
     </a>
   );
 }

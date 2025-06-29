@@ -46,6 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
 
+      // Handle sign out event specifically
+      if (event === 'SIGNED_OUT') {
+        console.log('🔐 AuthProvider: User signed out, clearing state');
+        setUser(null);
+        setSession(null);
+      }
+
       // Track auth events (only for authenticated users)
       try {
         if (event === 'SIGNED_IN' && session?.user) {
@@ -110,10 +117,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       console.log('🔐 AuthProvider: Signing out user');
+      
+      // Clear local state immediately
+      setUser(null);
+      setSession(null);
+      
+      // Call the auth service
       const { error } = await auth.signOut();
+      
+      if (error) {
+        console.error('❌ AuthProvider: Sign out error:', error);
+        // Even if there's an error, we've already cleared local state
+        // This ensures the UI updates immediately
+      } else {
+        console.log('✅ AuthProvider: Sign out successful');
+      }
+      
       return { error };
     } catch (err) {
-      console.error('❌ AuthProvider: Sign out error:', err);
+      console.error('❌ AuthProvider: Sign out exception:', err);
+      // Even on exception, ensure local state is cleared
+      setUser(null);
+      setSession(null);
       return { error: { message: 'An unexpected error occurred during signout' } };
     }
   };
