@@ -30,22 +30,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
 
         if (error) {
-          console.error('❌ AuthProvider: Error getting initial user:', error.message);
-          
           // Handle specific error cases gracefully
           if (error.message === 'STALE_TOKEN_CLEARED') {
             console.log('🔄 AuthProvider: Stale tokens cleared, user set to null');
             setUser(null);
           } else if (error.message === 'Auth session missing!') {
-            console.log('🔧 AuthProvider: Auth session missing - this may indicate a configuration issue');
-            console.log('📋 Please verify the following:');
-            console.log('   1. Check your .env file contains valid VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
-            console.log('   2. Ensure your Supabase project authentication settings are correctly configured');
-            console.log('   3. Verify your Supabase project is active and accessible');
-            console.log('   4. Check that your environment variables are properly loaded');
+            // This is a normal case when no user is signed in - don't log as error
+            console.log('🔐 AuthProvider: No active session found (user not signed in)');
             setUser(null);
           } else {
-            console.warn('⚠️ AuthProvider: Auth service error, continuing without user');
+            console.error('❌ AuthProvider: Error getting initial user:', error.message);
+            
+            if (error.message.includes('Invalid API key') || error.message.includes('API key')) {
+              console.log('🔧 AuthProvider: API key issue - this may indicate a configuration problem');
+              console.log('📋 Please verify the following:');
+              console.log('   1. Check your .env file contains valid VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+              console.log('   2. Ensure your Supabase project authentication settings are correctly configured');
+              console.log('   3. Verify your Supabase project is active and accessible');
+              console.log('   4. Check that your environment variables are properly loaded');
+            }
             setUser(null);
           }
         } else {
