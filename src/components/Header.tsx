@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FileText, Zap, MessageCircle, Menu, X, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { UserMenu } from './auth/UserMenu';
+import { ResumeBuilderLogo } from './icons/ResumeBuilderLogo';
 
 interface HeaderProps {
   activeTab: 'builder' | 'chat' | 'preview';
@@ -24,12 +25,8 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
         <div className="flex justify-between items-center h-16">
           {/* Logo and Title */}
           <div className="flex items-center space-x-3 min-w-0 flex-1 sm:flex-none">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden flex-shrink-0">
-              <img 
-                src="/src/assets/Resume_logo.jpeg" 
-                alt="AI Resume Builder Logo" 
-                className="w-full h-full object-cover"
-              />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
+              <ResumeBuilderLogo />
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">

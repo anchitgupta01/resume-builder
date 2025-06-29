@@ -6,6 +6,7 @@ import { ResumePreview } from './components/ResumePreview';
 import { AuthModal } from './components/auth/AuthModal';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ResumeBuilderLogo } from './components/icons/ResumeBuilderLogo';
 import { Resume } from './types/resume';
 import { Loader } from 'lucide-react';
 
@@ -64,11 +65,9 @@ function AppContent() {
           <div className="max-w-md w-full mx-4">
             <div className="text-center mb-8">
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-lg inline-block mb-4">
-                <img 
-                  src="/src/assets/Resume_logo.jpeg" 
-                  alt="AI Resume Builder Logo" 
-                  className="h-8 w-8 sm:h-6 sm:w-6 object-cover rounded"
-                />
+                <div className="w-8 h-8 sm:w-6 sm:h-6">
+                  <ResumeBuilderLogo className="text-white" />
+                </div>
               </div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 AI Resume Builder
