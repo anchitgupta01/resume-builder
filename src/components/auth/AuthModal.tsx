@@ -38,10 +38,13 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
       if (mode === 'signin') {
         const { error } = await signIn(email, password);
         if (error) {
+          // Handle specific error cases
           if (error.message.includes('Email not confirmed')) {
             setError('Please check your email and click the confirmation link before signing in.');
-          } else if (error.message.includes('Invalid login credentials')) {
+          } else if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid email or password')) {
             setError('Invalid email or password. Please check your credentials and try again.');
+          } else if (error.message.includes('not configured') || error.message.includes('configuration error')) {
+            setError('Authentication service is temporarily unavailable. Please try again later or contact support.');
           } else {
             setError(error.message);
           }
@@ -60,8 +63,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
         
         const { error } = await signUp(email, password, fullName);
         if (error) {
-          if (error.message.includes('User already registered')) {
+          if (error.message.includes('User already registered') || error.message.includes('already exists')) {
             setError('An account with this email already exists. Please sign in instead.');
+          } else if (error.message.includes('not configured') || error.message.includes('configuration error')) {
+            setError('Account creation is temporarily unavailable. Please try again later or contact support.');
           } else {
             setError(error.message);
           }
@@ -71,12 +76,17 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
       } else if (mode === 'reset') {
         const { error } = await resetPassword(email);
         if (error) {
-          setError(error.message);
+          if (error.message.includes('not configured')) {
+            setError('Password reset is temporarily unavailable. Please contact support.');
+          } else {
+            setError(error.message);
+          }
         } else {
           setMessage('Password reset email sent! Please check your inbox for instructions.');
         }
       }
     } catch (err) {
+      console.error('Auth modal error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -180,6 +190,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
                   placeholder="Enter your email"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -199,6 +210,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
                     placeholder="Enter your password"
+                    autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                     required
                     minLength={6}
                   />
@@ -227,6 +239,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
                     placeholder="Confirm your password"
+                    autoComplete="new-password"
                     required
                     minLength={6}
                   />

@@ -1,16 +1,39 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/database';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Get environment variables with fallbacks and better detection
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-console.log('🔧 Supabase Configuration Check:');
-console.log('URL configured:', !!supabaseUrl);
-console.log('Key configured:', !!supabaseAnonKey);
-console.log('URL value:', supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'undefined');
+console.log('🔧 Supabase Environment Check:');
+console.log('NODE_ENV:', import.meta.env.MODE);
+console.log('URL exists:', !!supabaseUrl);
+console.log('URL length:', supabaseUrl?.length || 0);
+console.log('Key exists:', !!supabaseAnonKey);
+console.log('Key length:', supabaseAnonKey?.length || 0);
 
-// Create Supabase client with proper error handling
-export const supabase = supabaseUrl && supabaseAnonKey 
+// More detailed logging for debugging
+if (supabaseUrl) {
+  console.log('URL preview:', supabaseUrl.substring(0, 30) + '...');
+} else {
+  console.error('❌ VITE_SUPABASE_URL is missing or empty');
+}
+
+if (supabaseAnonKey) {
+  console.log('Key preview:', supabaseAnonKey.substring(0, 20) + '...');
+} else {
+  console.error('❌ VITE_SUPABASE_ANON_KEY is missing or empty');
+}
+
+// Validate URL format
+const isValidUrl = supabaseUrl && supabaseUrl.startsWith('https://') && supabaseUrl.includes('.supabase.co');
+const isValidKey = supabaseAnonKey && supabaseAnonKey.length > 50; // Supabase keys are typically longer
+
+console.log('URL format valid:', isValidUrl);
+console.log('Key format valid:', isValidKey);
+
+// Create Supabase client only if both URL and key are valid
+export const supabase = (isValidUrl && isValidKey) 
   ? createClient<Database>(supabaseUrl, supabaseAnonKey)
   : null;
 
@@ -18,43 +41,65 @@ export const supabase = supabaseUrl && supabaseAnonKey
 if (supabase) {
   console.log('✅ Supabase client created successfully');
   
-  // Test connection with timeout
+  // Test connection with timeout and better error handling
   const testConnection = async () => {
     try {
+      console.log('🔍 Testing Supabase connection...');
+      
+      // Use a simple query with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const { data, error } = await supabase
         .from('resumes')
-        .select('count', { count: 'exact', head: true });
+        .select('count', { count: 'exact', head: true })
+        .abortSignal(controller.signal);
+      
+      clearTimeout(timeoutId);
       
       if (error) {
         console.error('❌ Supabase connection test failed:', error.message);
+        if (error.message.includes('JWT')) {
+          console.error('🔑 Authentication issue - check your Supabase keys');
+        }
       } else {
         console.log('✅ Supabase connection test successful');
+        console.log('📊 Database accessible, resume count check passed');
       }
-    } catch (err) {
-      console.error('❌ Supabase connection test error:', err);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error('⏰ Supabase connection test timed out');
+      } else {
+        console.error('❌ Supabase connection test error:', err.message);
+      }
     }
   };
   
   // Test connection after a short delay
   setTimeout(testConnection, 1000);
 } else {
-  console.warn('⚠️ Supabase not configured - some features will be limited');
+  console.warn('⚠️ Supabase not properly configured');
+  console.warn('📋 Required environment variables:');
+  console.warn('   - VITE_SUPABASE_URL (should start with https:// and contain .supabase.co)');
+  console.warn('   - VITE_SUPABASE_ANON_KEY (should be a long string)');
+  console.warn('🔧 Please check your Netlify environment variables');
 }
 
 // Auth helpers with improved error handling
 export const auth = {
   signUp: async (email: string, password: string, fullName: string) => {
     if (!supabase) {
+      console.error('❌ Auth: Supabase not configured for signup');
       return { 
         data: null, 
         error: { 
-          message: 'Database not configured. Please contact support or try again later.' 
+          message: 'Authentication service is not configured. Please contact support.' 
         } 
       };
     }
     
     try {
-      console.log('🔐 Auth: Signing up user');
+      console.log('🔐 Auth: Attempting signup for:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -67,57 +112,78 @@ export const auth = {
       });
       
       if (error) {
-        console.error('❌ Auth signup error:', error);
+        console.error('❌ Auth signup error:', error.message);
+        
+        // Provide more user-friendly error messages
+        if (error.message.includes('Invalid API key')) {
+          return { data: null, error: { message: 'Authentication service configuration error. Please contact support.' } };
+        }
+        if (error.message.includes('User already registered')) {
+          return { data: null, error: { message: 'An account with this email already exists. Please sign in instead.' } };
+        }
       } else {
         console.log('✅ Auth signup successful');
       }
       
       return { data, error };
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Auth signup exception:', err);
       return { 
         data: null, 
-        error: { message: 'Authentication service temporarily unavailable' } 
+        error: { message: 'Authentication service temporarily unavailable. Please try again later.' } 
       };
     }
   },
 
   signIn: async (email: string, password: string) => {
     if (!supabase) {
+      console.error('❌ Auth: Supabase not configured for signin');
       return { 
         data: null, 
         error: { 
-          message: 'Database not configured. Please contact support or try again later.' 
+          message: 'Authentication service is not configured. Please contact support.' 
         } 
       };
     }
     
     try {
-      console.log('🔐 Auth: Signing in user');
+      console.log('🔐 Auth: Attempting signin for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
-        console.error('❌ Auth signin error:', error);
+        console.error('❌ Auth signin error:', error.message);
+        
+        // Provide more user-friendly error messages
+        if (error.message.includes('Invalid API key')) {
+          return { data: null, error: { message: 'Authentication service configuration error. Please contact support.' } };
+        }
+        if (error.message.includes('Invalid login credentials')) {
+          return { data: null, error: { message: 'Invalid email or password. Please check your credentials.' } };
+        }
+        if (error.message.includes('Email not confirmed')) {
+          return { data: null, error: { message: 'Please check your email and click the confirmation link before signing in.' } };
+        }
       } else {
-        console.log('✅ Auth signin successful');
+        console.log('✅ Auth signin successful for:', email);
       }
       
       return { data, error };
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Auth signin exception:', err);
       return { 
         data: null, 
-        error: { message: 'Authentication service temporarily unavailable' } 
+        error: { message: 'Authentication service temporarily unavailable. Please try again later.' } 
       };
     }
   },
 
   signOut: async () => {
     if (!supabase) {
-      return { error: { message: 'Database not configured' } };
+      console.warn('⚠️ Auth: Supabase not configured for signout');
+      return { error: null }; // Allow signout even if not configured
     }
     
     try {
@@ -131,9 +197,9 @@ export const auth = {
       }
       
       return { error };
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Auth signout exception:', err);
-      return { error: { message: 'Sign out failed' } };
+      return { error: null }; // Don't block signout
     }
   },
 
@@ -141,7 +207,7 @@ export const auth = {
     if (!supabase) {
       return { 
         data: null, 
-        error: { message: 'Database not configured' } 
+        error: { message: 'Password reset service is not configured. Please contact support.' } 
       };
     }
     
@@ -154,15 +220,15 @@ export const auth = {
       if (error) {
         console.error('❌ Auth password reset error:', error);
       } else {
-        console.log('✅ Auth password reset successful');
+        console.log('✅ Auth password reset email sent');
       }
       
       return { data, error };
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Auth password reset exception:', err);
       return { 
         data: null, 
-        error: { message: 'Password reset service temporarily unavailable' } 
+        error: { message: 'Password reset service temporarily unavailable. Please try again later.' } 
       };
     }
   },
@@ -171,7 +237,7 @@ export const auth = {
     if (!supabase) {
       return { 
         data: null, 
-        error: { message: 'Database not configured' } 
+        error: { message: 'Password update service is not configured.' } 
       };
     }
     
@@ -188,20 +254,21 @@ export const auth = {
       }
       
       return { data, error };
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Auth password update exception:', err);
       return { 
         data: null, 
-        error: { message: 'Password update failed' } 
+        error: { message: 'Password update failed. Please try again.' } 
       };
     }
   },
 
   getUser: () => {
     if (!supabase) {
+      console.log('⚠️ Auth: Supabase not configured, returning null user');
       return Promise.resolve({ 
         data: { user: null }, 
-        error: { message: 'Database not configured' } 
+        error: { message: 'Authentication service not configured' } 
       });
     }
     
@@ -212,7 +279,16 @@ export const auth = {
   onAuthStateChange: (callback: (event: string, session: any) => void) => {
     if (!supabase) {
       console.log('⚠️ Auth: Supabase not configured, skipping auth state listener');
-      return { data: { subscription: { unsubscribe: () => {} } } };
+      // Return a mock subscription that does nothing
+      return { 
+        data: { 
+          subscription: { 
+            unsubscribe: () => {
+              console.log('🔐 Auth: Mock subscription unsubscribed');
+            } 
+          } 
+        } 
+      };
     }
     
     console.log('🔐 Auth: Setting up auth state listener');
@@ -226,10 +302,11 @@ export const db = {
   resumes: {
     list: async (userId: string) => {
       if (!supabase) {
+        console.warn('📄 DB: Supabase not configured, cannot list resumes');
         return { 
           data: null, 
           error: { 
-            message: 'Resume storage not available. Working in local mode only.' 
+            message: 'Resume storage is not available. Please check your configuration or contact support.' 
           } 
         };
       }
@@ -244,17 +321,25 @@ export const db = {
           .order('updated_at', { ascending: false });
         
         if (error) {
-          console.error('❌ DB: Resume list error:', error);
+          console.error('❌ DB: Resume list error:', error.message);
+          
+          // Provide more specific error messages
+          if (error.message.includes('JWT')) {
+            return { data: null, error: { message: 'Authentication expired. Please sign in again.' } };
+          }
+          if (error.message.includes('permission')) {
+            return { data: null, error: { message: 'Permission denied. Please check your account access.' } };
+          }
         } else {
           console.log('✅ DB: Resume list success, count:', data?.length || 0);
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Resume list exception:', err);
         return { 
           data: null, 
-          error: { message: 'Failed to fetch resumes from database' } 
+          error: { message: 'Failed to fetch resumes. Please try again.' } 
         };
       }
     },
@@ -283,11 +368,11 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Resume get exception:', err);
         return { 
           data: null, 
-          error: { message: 'Failed to fetch resume from database' } 
+          error: { message: 'Failed to fetch resume' } 
         };
       }
     },
@@ -316,11 +401,11 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Resume create exception:', err);
         return { 
           data: null, 
-          error: { message: 'Failed to save resume to database' } 
+          error: { message: 'Failed to save resume' } 
         };
       }
     },
@@ -350,11 +435,11 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Resume update exception:', err);
         return { 
           data: null, 
-          error: { message: 'Failed to update resume in database' } 
+          error: { message: 'Failed to update resume' } 
         };
       }
     },
@@ -379,9 +464,9 @@ export const db = {
         }
         
         return { error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Resume delete exception:', err);
-        return { error: { message: 'Failed to delete resume from database' } };
+        return { error: { message: 'Failed to delete resume' } };
       }
     },
   },
@@ -415,7 +500,7 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Chat history list exception:', err);
         return { data: null, error: { message: 'Failed to fetch chat history' } };
       }
@@ -442,7 +527,7 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Chat history create exception:', err);
         return { data: null, error: { message: 'Failed to save chat history' } };
       }
@@ -470,7 +555,7 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Chat history update exception:', err);
         return { data: null, error: { message: 'Failed to update chat history' } };
       }
@@ -481,6 +566,7 @@ export const db = {
   templates: {
     list: async () => {
       if (!supabase) {
+        console.log('📋 DB: Supabase not configured, templates not available from database');
         return { data: null, error: { message: 'Templates not available from database' } };
       }
       
@@ -499,7 +585,7 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Templates list exception:', err);
         return { data: null, error: { message: 'Failed to fetch templates' } };
       }
@@ -510,6 +596,7 @@ export const db = {
   analytics: {
     track: async (event: string, details?: any) => {
       if (!supabase) {
+        console.log('📊 DB: Supabase not configured, skipping analytics');
         return { error: null }; // Silently fail for analytics when not configured
       }
       
@@ -539,7 +626,7 @@ export const db = {
         }
         
         return { error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: Analytics tracking exception:', err);
         return { error: null }; // Don't fail the main operation for analytics
       }
@@ -569,7 +656,7 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: User profile get exception:', err);
         return { data: null, error: { message: 'Failed to fetch user profile' } };
       }
@@ -597,7 +684,7 @@ export const db = {
         }
         
         return { data, error };
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ DB: User profile update exception:', err);
         return { data: null, error: { message: 'Failed to update user profile' } };
       }

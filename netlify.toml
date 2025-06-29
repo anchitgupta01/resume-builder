@@ -42,13 +42,31 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Environment variable handling
-[context.production.environment]
-  VITE_SUPABASE_URL = ""
-  VITE_SUPABASE_ANON_KEY = ""
-  VITE_OPENAI_API_KEY = ""
+# Environment variable handling for Netlify
+[context.production]
+  command = "npm run build"
 
-[context.deploy-preview.environment]
-  VITE_SUPABASE_URL = ""
-  VITE_SUPABASE_ANON_KEY = ""
-  VITE_OPENAI_API_KEY = ""
+[context.deploy-preview]
+  command = "npm run build"
+
+[context.branch-deploy]
+  command = "npm run build"
+
+# Build processing
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+# Functions (if needed in the future)
+[functions]
+  directory = "netlify/functions"
