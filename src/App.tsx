@@ -4,11 +4,11 @@ import { ResumeBuilder } from './components/ResumeBuilder';
 import { AIChat } from './components/AIChat';
 import { ResumePreview } from './components/ResumePreview';
 import { AuthModal } from './components/auth/AuthModal';
-import { BoltBadge } from './components/BoltBadge';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Resume } from './types/resume';
 import { Loader } from 'lucide-react';
+import { BoltBadge } from './components/BoltBadge';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<'builder' | 'chat' | 'preview'>('builder');
@@ -109,8 +109,7 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Bolt Badge for auth screen */}
-        <BoltBadge />
+        <BoltBadge position="top-right" size="medium" theme="light" />
 
         <AuthModal
           isOpen={showAuthModal}
@@ -128,8 +127,7 @@ function AppContent() {
         onTabChange={setActiveTab}
       />
       
-      {/* Bolt Badge positioned after header */}
-      <BoltBadge />
+      <BoltBadge position="top-right" size="medium" theme="light" />
       
       <main className="flex-1 py-4 sm:py-6 lg:py-8">
         {activeTab === 'builder' && (
