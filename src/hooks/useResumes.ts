@@ -19,14 +19,14 @@ export function useResumes() {
 
   const loadResumes = async () => {
     if (!user) {
-      console.log('No user found, skipping resume load');
+      console.log('👤 No user found, skipping resume load');
       setResumes([]);
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Loading resumes for user:', user.id);
+      console.log('📄 Loading resumes for user:', user.id);
       setLoading(true);
       setError(null);
       
@@ -35,24 +35,37 @@ export function useResumes() {
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Supabase environment variables are not configured. Please check your .env file.');
+        console.warn('⚠️ Supabase environment variables not configured');
+        setError('Database not configured. Please contact support.');
+        setResumes([]);
+        setLoading(false);
+        return;
       }
       
-      console.log('Supabase URL configured:', !!supabaseUrl);
-      console.log('Supabase Key configured:', !!supabaseKey);
+      console.log('🔧 Supabase URL configured:', !!supabaseUrl);
+      console.log('🔧 Supabase Key configured:', !!supabaseKey);
       
       const { data, error } = await db.resumes.list(user.id);
       
       if (error) {
-        console.error('Database error:', error);
-        setError(`Database error: ${error.message}`);
+        console.error('❌ Database error:', error);
+        
+        // Provide more specific error messages
+        if (error.message.includes('not available')) {
+          setError('Resume storage is temporarily unavailable. You can still create resumes locally.');
+        } else if (error.message.includes('not configured')) {
+          setError('Database configuration issue. Please contact support.');
+        } else {
+          setError(`Database error: ${error.message}`);
+        }
         setResumes([]);
       } else {
-        console.log('Resumes loaded successfully:', data?.length || 0);
+        console.log('✅ Resumes loaded successfully:', data?.length || 0);
         setResumes(data || []);
+        setError(null);
       }
     } catch (err) {
-      console.error('Unexpected error loading resumes:', err);
+      console.error('❌ Unexpected error loading resumes:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unable to connect to database';
       setError(errorMessage);
       setResumes([]);
@@ -65,7 +78,7 @@ export function useResumes() {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      console.log('Saving resume for user:', user.id);
+      console.log('💾 Saving resume for user:', user.id);
       
       const resumeData = {
         user_id: user.id,
@@ -76,23 +89,23 @@ export function useResumes() {
       const { data, error } = await db.resumes.create(resumeData);
       
       if (error) {
-        console.error('Save error:', error);
+        console.error('❌ Save error:', error);
         throw new Error(`Failed to save resume: ${error.message}`);
       }
       
-      console.log('Resume saved successfully:', data.id);
+      console.log('✅ Resume saved successfully:', data.id);
       await loadResumes(); // Refresh the list
       
       // Track analytics (non-blocking)
       try {
         await db.analytics.track('resume_created', { resume_id: data.id });
       } catch (analyticsError) {
-        console.warn('Analytics tracking failed:', analyticsError);
+        console.warn('⚠️ Analytics tracking failed:', analyticsError);
       }
       
       return data;
     } catch (err) {
-      console.error('Save resume error:', err);
+      console.error('❌ Save resume error:', err);
       throw err;
     }
   };
@@ -101,7 +114,7 @@ export function useResumes() {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      console.log('Updating resume:', id);
+      console.log('📝 Updating resume:', id);
       
       const updates: any = { data: resume };
       if (name !== undefined) {
@@ -111,23 +124,23 @@ export function useResumes() {
       const { data, error } = await db.resumes.update(id, updates);
       
       if (error) {
-        console.error('Update error:', error);
+        console.error('❌ Update error:', error);
         throw new Error(`Failed to update resume: ${error.message}`);
       }
       
-      console.log('Resume updated successfully');
+      console.log('✅ Resume updated successfully');
       await loadResumes(); // Refresh the list
       
       // Track analytics (non-blocking)
       try {
         await db.analytics.track('resume_updated', { resume_id: id });
       } catch (analyticsError) {
-        console.warn('Analytics tracking failed:', analyticsError);
+        console.warn('⚠️ Analytics tracking failed:', analyticsError);
       }
       
       return data;
     } catch (err) {
-      console.error('Update resume error:', err);
+      console.error('❌ Update resume error:', err);
       throw err;
     }
   };
@@ -136,51 +149,51 @@ export function useResumes() {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      console.log('Deleting resume:', id);
+      console.log('🗑️ Deleting resume:', id);
       
       const { error } = await db.resumes.delete(id);
       
       if (error) {
-        console.error('Delete error:', error);
+        console.error('❌ Delete error:', error);
         throw new Error(`Failed to delete resume: ${error.message}`);
       }
       
-      console.log('Resume deleted successfully');
+      console.log('✅ Resume deleted successfully');
       await loadResumes(); // Refresh the list
       
       // Track analytics (non-blocking)
       try {
         await db.analytics.track('resume_deleted', { resume_id: id });
       } catch (analyticsError) {
-        console.warn('Analytics tracking failed:', analyticsError);
+        console.warn('⚠️ Analytics tracking failed:', analyticsError);
       }
     } catch (err) {
-      console.error('Delete resume error:', err);
+      console.error('❌ Delete resume error:', err);
       throw err;
     }
   };
 
   const getResume = async (id: string) => {
     try {
-      console.log('Getting resume:', id);
+      console.log('📄 Getting resume:', id);
       
       const { data, error } = await db.resumes.get(id);
       
       if (error) {
-        console.error('Get resume error:', error);
+        console.error('❌ Get resume error:', error);
         throw new Error(`Failed to load resume: ${error.message}`);
       }
       
-      console.log('Resume retrieved successfully');
+      console.log('✅ Resume retrieved successfully');
       return data;
     } catch (err) {
-      console.error('Get resume error:', err);
+      console.error('❌ Get resume error:', err);
       throw err;
     }
   };
 
   useEffect(() => {
-    console.log('useResumes effect triggered, user:', user?.id);
+    console.log('🔄 useResumes effect triggered, user:', user?.id);
     loadResumes();
   }, [user]);
 

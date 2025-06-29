@@ -21,114 +21,149 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔐 AuthProvider: Initializing authentication');
+    
     // Get initial session
-    auth.getUser().then(({ data: { user } }) => {
+    auth.getUser().then(({ data: { user }, error }) => {
+      if (error) {
+        console.error('❌ AuthProvider: Error getting initial user:', error);
+      } else {
+        console.log('👤 AuthProvider: Initial user:', user?.email || 'none');
+      }
       setUser(user);
+      setLoading(false);
+    }).catch(err => {
+      console.error('❌ AuthProvider: Exception getting initial user:', err);
+      setUser(null);
       setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, session?.user?.email);
+      console.log('🔐 AuthProvider: Auth event:', event, session?.user?.email || 'no user');
       
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
 
       // Track auth events (only for authenticated users)
-      if (event === 'SIGNED_IN' && session?.user) {
-        await db.analytics.track('user_signed_in');
-      } else if (event === 'SIGNED_OUT') {
-        await db.analytics.track('user_signed_out');
+      try {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await db.analytics.track('user_signed_in');
+        } else if (event === 'SIGNED_OUT') {
+          await db.analytics.track('user_signed_out');
+        }
+      } catch (analyticsError) {
+        console.warn('⚠️ AuthProvider: Analytics tracking failed:', analyticsError);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🔐 AuthProvider: Cleaning up auth listener');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
+      console.log('🔐 AuthProvider: Signing up user:', email);
       const { data, error } = await auth.signUp(email, password, fullName);
       
       if (error) {
-        console.error('Sign up error:', error);
+        console.error('❌ AuthProvider: Sign up error:', error);
         return { error };
       }
 
       // Track signup attempt (only if user was created)
       if (data.user) {
-        await db.analytics.track('user_signed_up', { email });
+        try {
+          await db.analytics.track('user_signed_up', { email });
+        } catch (analyticsError) {
+          console.warn('⚠️ AuthProvider: Analytics tracking failed:', analyticsError);
+        }
       }
 
       return { error: null };
     } catch (err) {
-      console.error('Unexpected signup error:', err);
+      console.error('❌ AuthProvider: Unexpected signup error:', err);
       return { error: { message: 'An unexpected error occurred during signup' } };
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('🔐 AuthProvider: Signing in user:', email);
       const { data, error } = await auth.signIn(email, password);
       
       if (error) {
-        console.error('Sign in error:', error);
+        console.error('❌ AuthProvider: Sign in error:', error);
         return { error };
       }
 
       return { error: null };
     } catch (err) {
-      console.error('Unexpected signin error:', err);
+      console.error('❌ AuthProvider: Unexpected signin error:', err);
       return { error: { message: 'An unexpected error occurred during signin' } };
     }
   };
 
   const signOut = async () => {
     try {
+      console.log('🔐 AuthProvider: Signing out user');
       const { error } = await auth.signOut();
       return { error };
     } catch (err) {
-      console.error('Sign out error:', err);
+      console.error('❌ AuthProvider: Sign out error:', err);
       return { error: { message: 'An unexpected error occurred during signout' } };
     }
   };
 
   const resetPassword = async (email: string) => {
     try {
+      console.log('🔐 AuthProvider: Resetting password for:', email);
       const { data, error } = await auth.resetPassword(email);
       
       if (error) {
-        console.error('Password reset error:', error);
+        console.error('❌ AuthProvider: Password reset error:', error);
         return { error };
       }
 
       // Track password reset request
-      await db.analytics.track('password_reset_requested', { email });
+      try {
+        await db.analytics.track('password_reset_requested', { email });
+      } catch (analyticsError) {
+        console.warn('⚠️ AuthProvider: Analytics tracking failed:', analyticsError);
+      }
       
       return { error: null };
     } catch (err) {
-      console.error('Unexpected password reset error:', err);
+      console.error('❌ AuthProvider: Unexpected password reset error:', err);
       return { error: { message: 'An unexpected error occurred during password reset' } };
     }
   };
 
   const updatePassword = async (password: string) => {
     try {
+      console.log('🔐 AuthProvider: Updating password');
       const { data, error } = await auth.updatePassword(password);
       
       if (error) {
-        console.error('Password update error:', error);
+        console.error('❌ AuthProvider: Password update error:', error);
         return { error };
       }
 
       // Track password update (only for authenticated users)
       if (user) {
-        await db.analytics.track('password_updated');
+        try {
+          await db.analytics.track('password_updated');
+        } catch (analyticsError) {
+          console.warn('⚠️ AuthProvider: Analytics tracking failed:', analyticsError);
+        }
       }
       
       return { error: null };
     } catch (err) {
-      console.error('Unexpected password update error:', err);
+      console.error('❌ AuthProvider: Unexpected password update error:', err);
       return { error: { message: 'An unexpected error occurred during password update' } };
     }
   };
