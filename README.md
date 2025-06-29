@@ -4,9 +4,9 @@ A modern, AI-powered resume builder that helps you create professional, ATS-opti
 
 ## 🚀 Live Demo
 
-**[Try it now on Netlify →](https://ai-resume-builder-pro.netlify.app)**
+**[Try it now on Netlify →](https://ai-resume-builder.netlify.app)**
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/your-site-id/deploy-status)](https://app.netlify.com/sites/ai-resume-builder-pro/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/your-site-id/deploy-status)](https://app.netlify.com/sites/ai-resume-builder/deploys)
 
 ## ✨ Features
 
