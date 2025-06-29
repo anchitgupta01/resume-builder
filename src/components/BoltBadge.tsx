@@ -60,7 +60,7 @@ export function BoltBadge({
 
   return (
     <a 
-      href="https://github.com/kickiniteasy/bolt-hackathon-badge" 
+      href="https://bolt.new/" 
       target="_blank" 
       rel="noopener noreferrer"
       className={`fixed ${positionClasses[position]} ${sizeClasses[size].badge} rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 z-50 ${themeClasses[theme].outerCircle}`}
@@ -69,7 +69,7 @@ export function BoltBadge({
       <div className={`${sizeClasses[size].innerCircle} rounded-full flex flex-col items-center justify-center ${themeClasses[theme].innerCircle}`}>
         <Zap className={`${sizeClasses[size].icon} ${themeClasses[theme].icon}`} />
         <div className={`${sizeClasses[size].text} font-bold tracking-wider mt-1 ${themeClasses[theme].text}`}>
-          BOLT HACKATHON
+          
         </div>
       </div>
     </a>
