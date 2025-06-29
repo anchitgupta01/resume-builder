@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { ChatMessage, Resume } from '../types/resume';
 import { openaiService } from '../utils/openaiService';
 import { resumeTemplates } from '../data/resumeTemplates';
+import { BoltIcon } from './icons/ResumeIcons';
 
 interface AIChatProps {
   resume: Resume;
@@ -262,14 +263,14 @@ export function AIChat({ resume, onResumeChange }: AIChatProps) {
   console.log('🔍 AI Chat: onResumeChange function:', onResumeChange);
 
   return (
-    <div className="max-w-4xl mx-auto h-full flex flex-col p-4 sm:p-6">
+    <div className="max-w-4xl mx-auto h-full flex flex-col p-4 sm:p-6 relative">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex-1 flex flex-col min-h-0">
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-lg flex-shrink-0">
-                <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 p-1 rounded-lg flex-shrink-0">
+                <BoltIcon />
               </div>
               <div className="min-w-0">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">

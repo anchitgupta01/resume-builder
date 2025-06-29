@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FileText, Zap, MessageCircle, Menu, X, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { UserMenu } from './auth/UserMenu';
+import { ResumeIcon } from './icons/ResumeIcons';
 
 interface HeaderProps {
   activeTab: 'builder' | 'chat' | 'preview';
@@ -24,8 +25,8 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
         <div className="flex justify-between items-center h-16">
           {/* Logo and Title */}
           <div className="flex items-center space-x-3 min-w-0 flex-1 sm:flex-none">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg flex-shrink-0">
-              <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-purple-600 p-1 rounded-lg flex-shrink-0">
+              <ResumeIcon />
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">

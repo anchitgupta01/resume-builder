@@ -7,6 +7,7 @@ import { ProjectsForm } from './forms/ProjectsForm';
 import { TemplateSelector } from './TemplateSelector';
 import { PDFUploader } from './PDFUploader';
 import { BoltBadge } from './BoltBadge';
+import { ResumeIcon, BoltIcon } from './icons/ResumeIcons';
 import { Resume } from '../types/resume';
 import { FileText, Sparkles, Edit3, Info, Upload, CheckCircle } from 'lucide-react';
 
@@ -58,7 +59,10 @@ export function ResumeBuilder({ resume, onResumeChange }: ResumeBuilderProps) {
       <BoltBadge position="top-right" size="medium" />
       
       <div className="text-center mb-6 sm:mb-8">
-        <div className="mb-4">
+        <div className="mb-4 flex flex-col items-center">
+          <div className="w-20 h-20 mb-4">
+            <ResumeIcon />
+          </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Build Your Resume
           </h2>
@@ -177,7 +181,9 @@ export function ResumeBuilder({ resume, onResumeChange }: ResumeBuilderProps) {
         {isResumeEmpty() && (
           <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-center space-x-2 text-blue-700 dark:text-blue-300">
-              <Sparkles className="h-5 w-5" />
+              <div className="w-6 h-6">
+                <BoltIcon />
+              </div>
               <p className="text-sm font-medium">
                 💡 Pro Tip: Start with a professional template or upload your existing PDF to save time!
               </p>
