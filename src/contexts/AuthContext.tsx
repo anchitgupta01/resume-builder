@@ -36,6 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (error.message === 'STALE_TOKEN_CLEARED') {
             console.log('🔄 AuthProvider: Stale tokens cleared, user set to null');
             setUser(null);
+          } else if (error.message === 'Auth session missing!') {
+            console.log('🔧 AuthProvider: Auth session missing - this may indicate a configuration issue');
+            console.log('📋 Please verify the following:');
+            console.log('   1. Check your .env file contains valid VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+            console.log('   2. Ensure your Supabase project authentication settings are correctly configured');
+            console.log('   3. Verify your Supabase project is active and accessible');
+            console.log('   4. Check that your environment variables are properly loaded');
+            setUser(null);
           } else {
             console.warn('⚠️ AuthProvider: Auth service error, continuing without user');
             setUser(null);
