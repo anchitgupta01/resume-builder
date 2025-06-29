@@ -8,7 +8,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Resume } from './types/resume';
 import { Loader } from 'lucide-react';
-import { BoltBadge } from './components/BoltBadge';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<'builder' | 'chat' | 'preview'>('builder');
@@ -65,7 +64,7 @@ function AppContent() {
           <div className="max-w-md w-full mx-4">
             <div className="text-center mb-8">
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-lg inline-block mb-4">
-                <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="h-8 w-8 sm:h-6 sm:w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                   <path fillRule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
                 </svg>
@@ -124,8 +123,6 @@ function AppContent() {
         activeTab={activeTab} 
         onTabChange={setActiveTab}
       />
-      
-      <BoltBadge position="top-right" size="medium" theme="light" />
       
       <main className="flex-1 py-4 sm:py-6 lg:py-8">
         {activeTab === 'builder' && (
