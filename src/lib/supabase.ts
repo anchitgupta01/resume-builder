@@ -7,29 +7,84 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 console.log('Supabase configuration check:');
 console.log('URL exists:', !!supabaseUrl);
 console.log('Key exists:', !!supabaseAnonKey);
-console.log('URL value:', supabaseUrl);
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables!');
-  console.error('VITE_SUPABASE_URL:', supabaseUrl);
-  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[HIDDEN]' : 'undefined');
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  console.warn('Missing Supabase environment variables!');
+  console.warn('VITE_SUPABASE_URL:', supabaseUrl || 'undefined');
+  console.warn('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[HIDDEN]' : 'undefined');
+  console.warn('Please check your .env file and ensure Supabase is properly configured.');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Create a placeholder client if environment variables are missing
+const createSupabaseClient = () => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Return a mock client that will gracefully handle missing configuration
+    return {
+      auth: {
+        signUp: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
+        signInWithPassword: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
+        signOut: async () => ({ error: { message: 'Supabase not configured' } }),
+        resetPasswordForEmail: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
+        updateUser: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
+        getUser: async () => ({ data: { user: null }, error: { message: 'Supabase not configured' } }),
+        onAuthStateChange: () => ({ data: { subscription: null } }),
+      },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            order: () => ({
+              then: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+            }),
+            single: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+            then: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+          }),
+          order: () => ({
+            then: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+          }),
+          single: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+          then: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+        }),
+        insert: () => ({
+          select: () => ({
+            single: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+          })
+        }),
+        update: () => ({
+          eq: () => ({
+            select: () => ({
+              single: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+            })
+          })
+        }),
+        delete: () => ({
+          eq: () => Promise.resolve({ error: { message: 'Supabase not configured' } })
+        })
+      })
+    } as any;
+  }
+  
+  return createClient<Database>(supabaseUrl, supabaseAnonKey);
+};
 
-// Test the connection
-supabase.from('resumes').select('count', { count: 'exact', head: true })
-  .then(({ error, count }) => {
-    if (error) {
-      console.error('Supabase connection test failed:', error);
-    } else {
-      console.log('Supabase connection test successful, resume count:', count);
-    }
-  })
-  .catch(err => {
-    console.error('Supabase connection test error:', err);
-  });
+export const supabase = createSupabaseClient();
+
+// Only test the connection if environment variables are properly configured
+if (supabaseUrl && supabaseAnonKey) {
+  // Test the connection with proper error handling
+  supabase.from('resumes').select('count', { count: 'exact', head: true })
+    .then(({ error, count }) => {
+      if (error) {
+        console.error('Supabase connection test failed:', error);
+      } else {
+        console.log('Supabase connection test successful, resume count:', count);
+      }
+    })
+    .catch(err => {
+      console.error('Supabase connection test error:', err);
+    });
+} else {
+  console.warn('Skipping Supabase connection test due to missing configuration');
+}
 
 // Auth helpers
 export const auth = {
