@@ -51,261 +51,140 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
       // Dynamic import to reduce bundle size
       const jsPDF = (await import('jspdf')).default;
 
-      // Create new PDF document with professional settings
+      // Create new PDF document with A4 size
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 15;
+      const margin = 20;
       const contentWidth = pageWidth - (margin * 2);
       let currentY = margin;
 
-      // Professional color scheme
-      const primaryColor = [0, 0, 0]; // Black for main text
-      const secondaryColor = [60, 60, 60]; // Dark gray for secondary text
-      const accentColor = [0, 100, 200]; // Blue for links and accents
-      const lineColor = [200, 200, 200]; // Light gray for lines
+      // Colors
+      const primaryColor = [0, 0, 0]; // Black
+      const grayColor = [100, 100, 100]; // Gray for secondary text
+      const lightGrayColor = [150, 150, 150]; // Light gray for lines
 
-      // Helper function to add text with word wrapping and professional styling
+      // Helper function to add text with word wrapping
       const addText = (
         text: string, 
+        x: number,
+        y: number,
+        maxWidth: number,
         fontSize: number, 
-        fontStyle: 'normal' | 'bold' = 'normal', 
+        fontStyle: 'normal' | 'bold' | 'italic' = 'normal', 
         color: [number, number, number] = primaryColor,
         align: 'left' | 'center' | 'right' = 'left'
       ) => {
+        if (!text || text.trim() === '') return y;
+        
         pdf.setFontSize(fontSize);
         pdf.setFont('helvetica', fontStyle);
         pdf.setTextColor(color[0], color[1], color[2]);
         
-        const lines = pdf.splitTextToSize(text, contentWidth);
-        const lineHeight = fontSize * 0.35; // Convert pt to mm
+        const lines = pdf.splitTextToSize(text, maxWidth);
+        const lineHeight = fontSize * 0.35;
         
         // Check if we need a new page
-        if (currentY + (lines.length * lineHeight) > pageHeight - margin) {
+        if (y + (lines.length * lineHeight) > pageHeight - margin) {
           pdf.addPage();
-          currentY = margin;
+          y = margin;
         }
         
-        // Calculate x position based on alignment
-        let xPos = margin;
-        if (align === 'center') {
-          xPos = pageWidth / 2;
-        } else if (align === 'right') {
-          xPos = pageWidth - margin;
+        pdf.text(lines, x, y, { align });
+        return y + (lines.length * lineHeight);
+      };
+
+      // Helper function to add section header
+      const addSectionHeader = (title: string, y: number) => {
+        if (y + 15 > pageHeight - margin) {
+          pdf.addPage();
+          y = margin;
         }
         
-        pdf.text(lines, xPos, currentY, { align });
-        currentY += lines.length * lineHeight;
-        return currentY;
+        y = addText(title, margin, y, contentWidth, 12, 'bold', primaryColor);
+        
+        // Add underline
+        pdf.setDrawColor(lightGrayColor[0], lightGrayColor[1], lightGrayColor[2]);
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, y + 2, pageWidth - margin, y + 2);
+        
+        return y + 8;
       };
 
-      // Helper function to add spacing
-      const addSpacing = (space: number) => {
-        currentY += space;
-      };
-
-      // Helper function to add a professional section header with line
-      const addSectionHeader = (title: string) => {
-        addSpacing(6);
-        
-        // Add the section title
-        pdf.setFontSize(12);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(0, 0, 0);
-        pdf.text(title.toUpperCase(), margin, currentY);
-        
-        // Add professional underline
-        pdf.setDrawColor(lineColor[0], lineColor[1], lineColor[2]);
-        pdf.setLineWidth(0.3);
-        pdf.line(margin, currentY + 2, pageWidth - margin, currentY + 2);
-        
-        addSpacing(8);
-      };
-
-      // Helper function to add contact info in a professional layout
-      const addContactInfo = (items: string[]) => {
-        if (items.length === 0) return;
-        
-        const itemsPerLine = 3;
-        const itemWidth = contentWidth / itemsPerLine;
-        
-        for (let i = 0; i < items.length; i += itemsPerLine) {
-          const lineItems = items.slice(i, i + itemsPerLine);
-          
-          lineItems.forEach((item, index) => {
-            const xPos = margin + (index * itemWidth);
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
-            pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-            
-            const lines = pdf.splitTextToSize(item, itemWidth - 5);
-            pdf.text(lines, xPos, currentY, { align: index === 1 ? 'center' : 'left' });
-          });
-          
-          currentY += 4;
-        }
-      };
-
-      // HEADER SECTION - Professional Name and Contact
+      // HEADER SECTION - Centered
       if (resume.personalInfo.fullName) {
-        // Name in large, bold font
-        pdf.setFontSize(22);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(0, 0, 0);
-        pdf.text(resume.personalInfo.fullName.toUpperCase(), pageWidth / 2, currentY, { align: 'center' });
-        addSpacing(8);
+        currentY = addText(resume.personalInfo.fullName.toUpperCase(), pageWidth / 2, currentY + 10, contentWidth, 18, 'bold', primaryColor, 'center');
+        currentY += 3;
       }
 
-      // Contact Information in organized rows
+      // Job title from first experience or a default
+      if (resume.experience.length > 0) {
+        currentY = addText(resume.experience[0].position, pageWidth / 2, currentY, contentWidth, 12, 'normal', grayColor, 'center');
+        currentY += 8;
+      }
+
+      // Contact information - centered, on one line if possible
       const contactInfo = [];
-      if (resume.personalInfo.email) contactInfo.push(`📧 ${resume.personalInfo.email}`);
-      if (resume.personalInfo.phone) contactInfo.push(`📞 ${resume.personalInfo.phone}`);
-      if (resume.personalInfo.location) contactInfo.push(`📍 ${resume.personalInfo.location}`);
-      
+      if (resume.personalInfo.email) contactInfo.push(resume.personalInfo.email);
+      if (resume.personalInfo.phone) contactInfo.push(resume.personalInfo.phone);
+      if (resume.personalInfo.location) contactInfo.push(resume.personalInfo.location);
+      if (resume.personalInfo.linkedin) contactInfo.push(resume.personalInfo.linkedin);
+
       if (contactInfo.length > 0) {
-        addContactInfo(contactInfo);
-        addSpacing(2);
+        const contactText = contactInfo.join(' | ');
+        currentY = addText(contactText, pageWidth / 2, currentY, contentWidth, 10, 'normal', grayColor, 'center');
+        currentY += 12;
       }
 
-      // Professional Links
-      const links = [];
-      if (resume.personalInfo.linkedin) links.push(`LinkedIn: ${resume.personalInfo.linkedin}`);
-      if (resume.personalInfo.github) links.push(`GitHub: ${resume.personalInfo.github}`);
-      if (resume.personalInfo.website) links.push(`Portfolio: ${resume.personalInfo.website}`);
-      
-      if (links.length > 0) {
-        links.forEach(link => {
-          pdf.setFontSize(9);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-          pdf.text(link, pageWidth / 2, currentY, { align: 'center' });
-          currentY += 3;
-        });
-        addSpacing(4);
-      }
-
-      // Add a subtle separator line
-      pdf.setDrawColor(lineColor[0], lineColor[1], lineColor[2]);
-      pdf.setLineWidth(0.5);
-      pdf.line(margin + 20, currentY, pageWidth - margin - 20, currentY);
-      addSpacing(6);
-
-      // PROFESSIONAL SUMMARY
-      if (resume.personalInfo.summary) {
-        addSectionHeader('Professional Summary');
-        
-        pdf.setFontSize(11);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        
-        const summaryLines = pdf.splitTextToSize(resume.personalInfo.summary, contentWidth);
-        pdf.text(summaryLines, margin, currentY);
-        currentY += summaryLines.length * 4;
+      // SUMMARY/PROFILE
+      if (resume.personalInfo.summary && resume.personalInfo.summary.trim()) {
+        currentY = addText(resume.personalInfo.summary, margin, currentY, contentWidth, 11, 'normal', primaryColor);
+        currentY += 12;
       }
 
       // WORK EXPERIENCE
       if (resume.experience.length > 0) {
-        addSectionHeader('Professional Experience');
+        currentY = addSectionHeader('Work Experience', currentY);
         
         resume.experience.forEach((exp, index) => {
-          if (index > 0) addSpacing(6);
+          if (index > 0) currentY += 8;
           
-          // Job title and company in professional layout
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(exp.position, margin, currentY);
+          // Check if we need a new page for this experience
+          if (currentY + 30 > pageHeight - margin) {
+            pdf.addPage();
+            currentY = margin;
+          }
           
-          // Company name on the same line, right-aligned
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-          pdf.text(exp.company, pageWidth - margin, currentY, { align: 'right' });
-          addSpacing(4);
+          // Job title - bold
+          currentY = addText(exp.position, margin, currentY, contentWidth * 0.7, 12, 'bold', primaryColor);
           
-          // Dates
+          // Date range - right aligned
           const dateText = `${exp.startDate} - ${exp.current ? 'Present' : exp.endDate}`;
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'italic');
-          pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-          pdf.text(dateText, pageWidth - margin, currentY, { align: 'right' });
-          addSpacing(5);
+          addText(dateText, pageWidth - margin, currentY - 4, 50, 10, 'normal', grayColor, 'right');
+          currentY += 2;
           
-          // Responsibilities with professional bullet points
-          if (exp.description.length > 0) {
-            exp.description.forEach(desc => {
-              pdf.setFontSize(10);
-              pdf.setFont('helvetica', 'normal');
-              pdf.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-              
-              const bulletText = `• ${desc}`;
-              const lines = pdf.splitTextToSize(bulletText, contentWidth - 5);
-              pdf.text(lines, margin + 3, currentY);
-              currentY += lines.length * 3.5;
-            });
-          }
+          // Company name - italic
+          currentY = addText(exp.company, margin, currentY, contentWidth, 11, 'italic', grayColor);
+          currentY += 4;
           
-          // Achievements with emphasis
-          if (exp.achievements.length > 0) {
-            exp.achievements.forEach(achievement => {
-              pdf.setFontSize(10);
-              pdf.setFont('helvetica', 'normal');
-              pdf.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-              
-              const bulletText = `• ${achievement}`;
-              const lines = pdf.splitTextToSize(bulletText, contentWidth - 5);
-              pdf.text(lines, margin + 3, currentY);
-              currentY += lines.length * 3.5;
-            });
-          }
+          // Description and achievements
+          const allPoints = [...exp.description, ...exp.achievements];
+          allPoints.forEach(point => {
+            if (point && point.trim()) {
+              currentY = addText(`• ${point}`, margin + 5, currentY, contentWidth - 5, 10, 'normal', primaryColor);
+              currentY += 2;
+            }
+          });
+          
+          currentY += 3;
         });
-      }
-
-      // EDUCATION
-      if (resume.education.length > 0) {
-        addSectionHeader('Education');
         
-        resume.education.forEach((edu, index) => {
-          if (index > 0) addSpacing(4);
-          
-          // Degree and institution
-          pdf.setFontSize(11);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(`${edu.degree} in ${edu.field}`, margin, currentY);
-          
-          // Graduation date on the right
-          if (edu.graduationDate) {
-            pdf.setFont('helvetica', 'normal');
-            pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-            pdf.text(edu.graduationDate, pageWidth - margin, currentY, { align: 'right' });
-          }
-          addSpacing(3);
-          
-          // Institution
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-          pdf.text(edu.institution, margin, currentY);
-          addSpacing(3);
-          
-          // GPA and honors
-          const details = [];
-          if (edu.gpa) details.push(`GPA: ${edu.gpa}`);
-          if (edu.honors && edu.honors.length > 0) details.push(`Honors: ${edu.honors.join(', ')}`);
-          
-          if (details.length > 0) {
-            pdf.setFontSize(9);
-            pdf.setFont('helvetica', 'italic');
-            pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-            pdf.text(details.join(' | '), margin, currentY);
-            addSpacing(3);
-          }
-        });
+        currentY += 5;
       }
 
-      // SKILLS - Professional categorized layout
+      // CORE SKILLS
       if (resume.skills.length > 0) {
-        addSectionHeader('Core Competencies');
+        currentY = addSectionHeader('Core Skills', currentY);
         
         const skillsByCategory = resume.skills.reduce((acc, skill) => {
           if (!acc[skill.category]) acc[skill.category] = [];
@@ -313,97 +192,99 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
           return acc;
         }, {} as Record<string, string[]>);
 
-        Object.entries(skillsByCategory).forEach(([category, skills]) => {
-          const categoryName = category === 'technical' ? 'Technical Skills' : 
-                             category === 'soft' ? 'Soft Skills' :
-                             category === 'language' ? 'Languages' : 'Certifications';
-          
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(`${categoryName}:`, margin, currentY);
-          addSpacing(3);
-          
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-          
-          const skillsText = skills.join(' • ');
-          const lines = pdf.splitTextToSize(skillsText, contentWidth - 10);
-          pdf.text(lines, margin + 5, currentY);
-          currentY += lines.length * 3.5;
-          addSpacing(2);
-        });
+        // Combine all skills into one paragraph
+        const allSkills = Object.values(skillsByCategory).flat();
+        const skillsText = allSkills.join(', ');
+        
+        currentY = addText(skillsText, margin, currentY, contentWidth, 11, 'normal', primaryColor);
+        currentY += 10;
       }
 
-      // PROJECTS
+      // EDUCATION
+      if (resume.education.length > 0) {
+        currentY = addSectionHeader('Education', currentY);
+        
+        resume.education.forEach((edu, index) => {
+          if (index > 0) currentY += 6;
+          
+          // Check if we need a new page
+          if (currentY + 20 > pageHeight - margin) {
+            pdf.addPage();
+            currentY = margin;
+          }
+          
+          // Institution name
+          currentY = addText(edu.institution, margin, currentY, contentWidth * 0.7, 12, 'bold', primaryColor);
+          
+          // Graduation date - right aligned
+          if (edu.graduationDate) {
+            addText(edu.graduationDate, pageWidth - margin, currentY - 4, 50, 10, 'normal', grayColor, 'right');
+          }
+          currentY += 2;
+          
+          // Degree and field
+          const degreeText = `${edu.degree}${edu.field ? ` ${edu.field}` : ''}`;
+          currentY = addText(degreeText, margin, currentY, contentWidth, 11, 'italic', grayColor);
+          
+          // GPA and honors
+          const details = [];
+          if (edu.gpa) details.push(`GPA: ${edu.gpa}`);
+          if (edu.honors && edu.honors.length > 0) details.push(edu.honors.join(', '));
+          
+          if (details.length > 0) {
+            currentY += 2;
+            currentY = addText(details.join(' | '), margin, currentY, contentWidth, 10, 'normal', grayColor);
+          }
+          
+          currentY += 4;
+        });
+        
+        currentY += 5;
+      }
+
+      // PROJECTS (if any)
       if (resume.projects.length > 0) {
-        addSectionHeader('Notable Projects');
+        currentY = addSectionHeader('Projects', currentY);
         
         resume.projects.forEach((project, index) => {
-          if (index > 0) addSpacing(5);
+          if (index > 0) currentY += 6;
+          
+          // Check if we need a new page
+          if (currentY + 25 > pageHeight - margin) {
+            pdf.addPage();
+            currentY = margin;
+          }
           
           // Project name
-          pdf.setFontSize(11);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(project.name, margin, currentY);
-          addSpacing(3);
+          currentY = addText(project.name, margin, currentY, contentWidth, 12, 'bold', primaryColor);
+          currentY += 2;
           
           // Description
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-          
-          const descLines = pdf.splitTextToSize(project.description, contentWidth);
-          pdf.text(descLines, margin, currentY);
-          currentY += descLines.length * 3.5;
-          addSpacing(2);
+          currentY = addText(project.description, margin, currentY, contentWidth, 10, 'normal', primaryColor);
+          currentY += 2;
           
           // Technologies
           if (project.technologies.length > 0) {
-            pdf.setFontSize(9);
-            pdf.setFont('helvetica', 'bold');
-            pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-            pdf.text('Technologies:', margin, currentY);
-            
-            pdf.setFont('helvetica', 'normal');
-            const techText = project.technologies.join(', ');
-            const techLines = pdf.splitTextToSize(techText, contentWidth - 25);
-            pdf.text(techLines, margin + 25, currentY);
-            currentY += techLines.length * 3;
+            const techText = `Technologies: ${project.technologies.join(', ')}`;
+            currentY = addText(techText, margin, currentY, contentWidth, 10, 'italic', grayColor);
+            currentY += 2;
           }
           
-          // Project links
-          const projectLinks = [];
-          if (project.link) projectLinks.push(`Demo: ${project.link}`);
-          if (project.github) projectLinks.push(`GitHub: ${project.github}`);
+          // Links
+          const links = [];
+          if (project.link) links.push(`Demo: ${project.link}`);
+          if (project.github) links.push(`GitHub: ${project.github}`);
           
-          if (projectLinks.length > 0) {
-            addSpacing(1);
-            pdf.setFontSize(9);
-            pdf.setFont('helvetica', 'normal');
-            pdf.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-            pdf.text(projectLinks.join(' | '), margin, currentY);
-            addSpacing(3);
+          if (links.length > 0) {
+            currentY = addText(links.join(' | '), margin, currentY, contentWidth, 9, 'normal', grayColor);
           }
+          
+          currentY += 4;
         });
       }
 
-      // Professional footer
-      addSpacing(10);
-      pdf.setDrawColor(lineColor[0], lineColor[1], lineColor[2]);
-      pdf.setLineWidth(0.3);
-      pdf.line(margin, currentY, pageWidth - margin, currentY);
-      
-      addSpacing(3);
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'italic');
-      pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-      pdf.text('Generated by AI Resume Builder', pageWidth / 2, currentY, { align: 'center' });
-
-      // Save the PDF with professional naming
-      const fileName = `${resume.personalInfo.fullName?.replace(/\s+/g, '_') || 'Professional_Resume'}.pdf`;
+      // Save the PDF
+      const fileName = `${resume.personalInfo.fullName?.replace(/\s+/g, '_') || 'Resume'}.pdf`;
       pdf.save(fileName);
       
     } catch (error) {
@@ -714,7 +595,7 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
               {!isResumeEmpty() && (
                 <div className="mt-3 text-center">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    ✨ Professional template with selectable text
+                    ✨ Clean professional template with optimal spacing
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     📄 ATS-optimized formatting
@@ -763,53 +644,35 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                 </div>
               ) : (
                 <>
-                  {/* Professional Header - Wonsulting Style */}
-                  <div className="text-center mb-8 border-b-2 border-gray-900 pb-6">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-wide">
+                  {/* Professional Header - Centered like the template */}
+                  <div className="text-center mb-8 pb-6">
+                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 tracking-wide">
                       {resume.personalInfo.fullName?.toUpperCase() || 'YOUR NAME'}
                     </h1>
                     
-                    {/* Contact Information in Professional Layout */}
-                    <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-700 mb-2">
-                      {resume.personalInfo.location && (
-                        <span>{resume.personalInfo.location}</span>
-                      )}
-                      {resume.personalInfo.email && (
-                        <span>|</span>
-                      )}
-                      {resume.personalInfo.email && (
-                        <span>{resume.personalInfo.email}</span>
-                      )}
-                      {resume.personalInfo.phone && (
-                        <span>|</span>
-                      )}
-                      {resume.personalInfo.phone && (
-                        <span>{resume.personalInfo.phone}</span>
-                      )}
-                    </div>
+                    {/* Job title from experience */}
+                    {resume.experience.length > 0 && (
+                      <p className="text-lg text-gray-600 mb-4">
+                        {resume.experience[0].position}
+                      </p>
+                    )}
                     
-                    {/* Professional Links */}
-                    <div className="flex flex-wrap justify-center gap-4 text-sm text-blue-600">
+                    {/* Contact Information - centered and clean */}
+                    <div className="text-sm text-gray-600 space-y-1">
+                      {resume.personalInfo.email && (
+                        <div>{resume.personalInfo.email}</div>
+                      )}
+                      {resume.personalInfo.phone && resume.personalInfo.location && (
+                        <div>{resume.personalInfo.phone} | {resume.personalInfo.location}</div>
+                      )}
+                      {resume.personalInfo.phone && !resume.personalInfo.location && (
+                        <div>{resume.personalInfo.phone}</div>
+                      )}
+                      {!resume.personalInfo.phone && resume.personalInfo.location && (
+                        <div>{resume.personalInfo.location}</div>
+                      )}
                       {resume.personalInfo.linkedin && (
-                        <a href={resume.personalInfo.linkedin} className="hover:underline">
-                          LinkedIn
-                        </a>
-                      )}
-                      {resume.personalInfo.github && (
-                        <span>|</span>
-                      )}
-                      {resume.personalInfo.github && (
-                        <a href={resume.personalInfo.github} className="hover:underline">
-                          GitHub
-                        </a>
-                      )}
-                      {resume.personalInfo.website && (
-                        <span>|</span>
-                      )}
-                      {resume.personalInfo.website && (
-                        <a href={resume.personalInfo.website} className="hover:underline">
-                          Portfolio
-                        </a>
+                        <div className="text-blue-600">{resume.personalInfo.linkedin}</div>
                       )}
                     </div>
                   </div>
@@ -817,16 +680,13 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                   {/* Professional Summary */}
                   {resume.personalInfo.summary && (
                     <div className="mb-8">
-                      <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1 uppercase tracking-wide">
-                        Professional Summary
-                      </h2>
                       <p className="text-gray-700 leading-relaxed text-justify">
                         {resume.personalInfo.summary}
                       </p>
                     </div>
                   )}
 
-                  {/* Work Experience - Professional Layout */}
+                  {/* Work Experience */}
                   {resume.experience.length > 0 && (
                     <div className="mb-8">
                       <h2 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-1 uppercase tracking-wide">
@@ -835,22 +695,20 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                       <div className="space-y-6">
                         {resume.experience.map((exp) => (
                           <div key={exp.id}>
-                            {/* Company and Position Header */}
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h3 className="text-base font-bold text-gray-900">
-                                  {exp.company}
-                                </h3>
-                                <p className="text-gray-700 font-semibold italic">
-                                  {exp.position}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-gray-600 font-medium">
-                                  {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
-                                </p>
-                              </div>
+                            {/* Job title and dates */}
+                            <div className="flex justify-between items-start mb-1">
+                              <h3 className="text-base font-bold text-gray-900">
+                                {exp.position}
+                              </h3>
+                              <span className="text-gray-600 text-sm">
+                                {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
+                              </span>
                             </div>
+                            
+                            {/* Company name */}
+                            <p className="text-gray-600 italic mb-3">
+                              {exp.company}
+                            </p>
                             
                             {/* Responsibilities and Achievements */}
                             {(exp.description.length > 0 || exp.achievements.length > 0) && (
@@ -859,12 +717,24 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                                   <li key={index} className="text-sm leading-relaxed">{desc}</li>
                                 ))}
                                 {exp.achievements.map((achievement, index) => (
-                                  <li key={index} className="text-sm leading-relaxed font-medium">{achievement}</li>
+                                  <li key={index} className="text-sm leading-relaxed">{achievement}</li>
                                 ))}
                               </ul>
                             )}
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Core Skills */}
+                  {resume.skills.length > 0 && (
+                    <div className="mb-8">
+                      <h2 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-1 uppercase tracking-wide">
+                        Core Skills
+                      </h2>
+                      <div className="text-gray-700">
+                        {resume.skills.map(skill => skill.name).join(', ')}
                       </div>
                     </div>
                   )}
@@ -883,52 +753,22 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                                 <h3 className="text-base font-bold text-gray-900">
                                   {edu.institution}
                                 </h3>
-                                <p className="text-gray-700 font-semibold italic">
-                                  {edu.degree} in {edu.field}
+                                <p className="text-gray-600 italic">
+                                  {edu.degree}{edu.field ? ` ${edu.field}` : ''}
                                 </p>
-                                {edu.gpa && (
-                                  <p className="text-gray-600 text-sm">GPA: {edu.gpa}</p>
-                                )}
                               </div>
-                              <p className="text-gray-600 font-medium">{edu.graduationDate}</p>
+                              {edu.graduationDate && (
+                                <span className="text-gray-600 text-sm">{edu.graduationDate}</span>
+                              )}
                             </div>
                             
-                            {edu.honors && edu.honors.length > 0 && (
-                              <ul className="list-disc list-inside text-gray-700 text-sm mt-1 ml-2">
-                                {edu.honors.map((honor, index) => (
-                                  <li key={index}>{honor}</li>
-                                ))}
-                              </ul>
+                            {(edu.gpa || (edu.honors && edu.honors.length > 0)) && (
+                              <div className="mt-1 text-sm text-gray-600">
+                                {edu.gpa && <span>GPA: {edu.gpa}</span>}
+                                {edu.gpa && edu.honors && edu.honors.length > 0 && <span> | </span>}
+                                {edu.honors && edu.honors.length > 0 && <span>{edu.honors.join(', ')}</span>}
+                              </div>
                             )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Skills - Professional Grid Layout */}
-                  {resume.skills.length > 0 && (
-                    <div className="mb-8">
-                      <h2 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-1 uppercase tracking-wide">
-                        Skills & Interests
-                      </h2>
-                      <div className="space-y-3">
-                        {Object.entries(
-                          resume.skills.reduce((acc, skill) => {
-                            if (!acc[skill.category]) acc[skill.category] = [];
-                            acc[skill.category].push(skill);
-                            return acc;
-                          }, {} as Record<string, typeof resume.skills>)
-                        ).map(([category, skills]) => (
-                          <div key={category}>
-                            <span className="font-bold text-gray-900 text-sm">
-                              {category === 'technical' ? 'Skills:' : 
-                               category === 'soft' ? 'Soft Skills:' :
-                               category === 'language' ? 'Languages:' : 'Interests:'}
-                            </span>
-                            <span className="ml-2 text-gray-700 text-sm">
-                              {skills.map(skill => skill.name).join(' | ')}
-                            </span>
                           </div>
                         ))}
                       </div>
@@ -939,33 +779,33 @@ export function ResumePreview({ resume }: ResumePreviewProps) {
                   {resume.projects.length > 0 && (
                     <div className="mb-8">
                       <h2 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-1 uppercase tracking-wide">
-                        Notable Projects
+                        Projects
                       </h2>
                       <div className="space-y-4">
                         {resume.projects.map((project) => (
                           <div key={project.id}>
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="text-base font-bold text-gray-900">
-                                {project.name}
-                              </h3>
-                              <div className="flex space-x-2 text-sm">
+                            <h3 className="text-base font-bold text-gray-900 mb-1">
+                              {project.name}
+                            </h3>
+                            <p className="text-gray-700 text-sm leading-relaxed mb-2">{project.description}</p>
+                            {project.technologies.length > 0 && (
+                              <p className="text-gray-600 text-sm italic">
+                                Technologies: {project.technologies.join(', ')}
+                              </p>
+                            )}
+                            {(project.link || project.github) && (
+                              <div className="text-sm text-blue-600 mt-1">
                                 {project.link && (
-                                  <a href={project.link} className="text-blue-600 hover:underline">
-                                    Demo
+                                  <a href={project.link} className="hover:underline mr-4">
+                                    Demo: {project.link}
                                   </a>
                                 )}
                                 {project.github && (
-                                  <a href={project.github} className="text-blue-600 hover:underline">
-                                    GitHub
+                                  <a href={project.github} className="hover:underline">
+                                    GitHub: {project.github}
                                   </a>
                                 )}
                               </div>
-                            </div>
-                            <p className="text-gray-700 text-sm leading-relaxed mb-2">{project.description}</p>
-                            {project.technologies.length > 0 && (
-                              <p className="text-gray-600 text-sm">
-                                <span className="font-semibold">Technologies:</span> {project.technologies.join(', ')}
-                              </p>
                             )}
                           </div>
                         ))}
