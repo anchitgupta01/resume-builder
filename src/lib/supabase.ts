@@ -85,6 +85,22 @@ if (supabase) {
   console.warn('🔧 Please check your Netlify environment variables');
 }
 
+// Helper function to clear stale auth tokens
+const clearStaleAuthTokens = () => {
+  try {
+    // Clear Supabase auth tokens from localStorage
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('sb-') && key.includes('auth-token')) {
+        localStorage.removeItem(key);
+        console.log('🧹 Cleared stale auth token:', key);
+      }
+    });
+  } catch (err) {
+    console.warn('⚠️ Failed to clear localStorage tokens:', err);
+  }
+};
+
 // Auth helpers with improved error handling
 export const auth = {
   signUp: async (email: string, password: string, fullName: string) => {
@@ -263,17 +279,51 @@ export const auth = {
     }
   },
 
-  getUser: () => {
+  getUser: async () => {
     if (!supabase) {
       console.log('⚠️ Auth: Supabase not configured, returning null user');
-      return Promise.resolve({ 
+      return { 
         data: { user: null }, 
         error: { message: 'Authentication service not configured' } 
-      });
+      };
     }
     
-    console.log('🔐 Auth: Getting current user');
-    return supabase.auth.getUser();
+    try {
+      console.log('🔐 Auth: Getting current user');
+      const result = await supabase.auth.getUser();
+      
+      // Check for refresh token errors
+      if (result.error && result.error.message && 
+          (result.error.message.includes('refresh_token_not_found') || 
+           result.error.message.includes('Invalid Refresh Token'))) {
+        console.warn('🔄 Auth: Refresh token invalid, clearing stale tokens');
+        clearStaleAuthTokens();
+        return { 
+          data: { user: null }, 
+          error: { message: 'STALE_TOKEN_CLEARED' } 
+        };
+      }
+      
+      return result;
+    } catch (err: any) {
+      console.error('❌ Auth: Get user exception:', err);
+      
+      // Check if the error is related to refresh tokens
+      if (err.message && (err.message.includes('refresh_token_not_found') || 
+                         err.message.includes('Invalid Refresh Token'))) {
+        console.warn('🔄 Auth: Refresh token exception, clearing stale tokens');
+        clearStaleAuthTokens();
+        return { 
+          data: { user: null }, 
+          error: { message: 'STALE_TOKEN_CLEARED' } 
+        };
+      }
+      
+      return { 
+        data: { user: null }, 
+        error: { message: 'Failed to get user authentication status' } 
+      };
+    }
   },
   
   onAuthStateChange: (callback: (event: string, session: any) => void) => {

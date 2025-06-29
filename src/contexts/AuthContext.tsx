@@ -27,6 +27,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     auth.getUser().then(({ data: { user }, error }) => {
       if (error) {
         console.error('❌ AuthProvider: Error getting initial user:', error);
+        
+        // Check if stale tokens were cleared
+        if (error.message === 'STALE_TOKEN_CLEARED') {
+          console.log('🔄 AuthProvider: Stale tokens detected, reloading page');
+          window.location.reload();
+          return;
+        }
       } else {
         console.log('👤 AuthProvider: Initial user:', user?.email || 'none');
       }
