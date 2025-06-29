@@ -40,7 +40,7 @@ export function BoltBadge({
       target="_blank" 
       rel="noopener noreferrer"
       className={`fixed ${positionClasses[position]} ${sizeClasses[size].badge} rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 z-50 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700`}
-      title="Built with Bolt - AI-powered full-stack development"
+      title="Built with Bolt"
     >
 
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0.00 0.00 360.00 360.00">
