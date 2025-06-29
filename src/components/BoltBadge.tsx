@@ -1,4 +1,6 @@
 import React from 'react';
+import { Zap } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface BoltBadgeProps {
   position?: 'top-right' | 'bottom-right' | 'top-left' | 'bottom-left';
@@ -9,6 +11,8 @@ export function BoltBadge({
   position = 'top-right', 
   size = 'medium'
 }: BoltBadgeProps) {
+  const { theme } = useTheme();
+  
   // Size mappings
   const sizeClasses = {
     small: {
@@ -33,24 +37,4 @@ export function BoltBadge({
     'bottom-left': 'bottom-4 left-4'
   };
 
-  return (
-    <a 
-      href="https://bolt.new/" 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className={`fixed ${positionClasses[position]} ${sizeClasses[size].badge} rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 z-50 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700`}
-      title="Built with Bolt - AI-powered full-stack development"
-    >
-      <div className={`${sizeClasses[size].icon} text-white`}>
-        {/* Replace this SVG with your bolt-black.svg content */}
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-          {/* PASTE YOUR BOLT-BLACK.SVG CONTENT HERE */}
-          {/* Remove the outer <svg> tags and just paste the inner content */}
-          
-          {/* Placeholder bolt icon - replace with your SVG content */}
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-        </svg>
-      </div>
-    </a>
-  );
-}
+  
