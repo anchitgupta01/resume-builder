@@ -109,8 +109,6 @@ function AppContent() {
           </div>
         </div>
 
-        <BoltBadge position="top-right" size="medium" theme="light" />
-
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
