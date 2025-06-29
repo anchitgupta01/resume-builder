@@ -26,19 +26,49 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
     setMode(initialMode);
   }, [initialMode]);
 
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setConfirmPassword('');
+    setError(null);
+    setMessage(null);
+    setShowPassword(false);
+    setLoading(false); // Ensure loading is reset
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (loading) {
+      console.log('🔐 AuthModal: Already processing, ignoring duplicate submission');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setMessage(null);
 
-    // Set a timeout to prevent infinite loading
+    // Create an AbortController for request cancellation
+    const abortController = new AbortController();
+    
+    // Set a timeout to prevent infinite loading - reduced to 15 seconds
     const timeoutId = setTimeout(() => {
+      abortController.abort();
       setLoading(false);
       setError('Request timed out. Please check your internet connection and try again.');
-    }, 30000); // 30 second timeout
+      console.error('❌ AuthModal: Request timed out after 15 seconds');
+    }, 15000);
 
     try {
       if (mode === 'signin') {
@@ -109,6 +139,17 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           return;
         }
         
+        // Check if Supabase is configured before attempting signup
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseKey) {
+          setError('Authentication service is not configured. Please contact support.');
+          return;
+        }
+        
+        console.log('🔧 AuthModal: Supabase configuration check passed');
+        
         const { data, error } = await signUp(email.trim(), password, fullName.trim());
         
         if (error) {
@@ -125,6 +166,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             setError('Please enter a valid email address.');
           } else if (error.message.includes('Database error')) {
             setError('There was an issue creating your account. Please try again in a moment.');
+          } else if (error.message.includes('Invalid API key') || error.message.includes('API key')) {
+            setError('Authentication service configuration issue. Please contact support.');
           } else {
             setError(error.message);
           }
@@ -189,26 +232,23 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
         setError('Network connection issue. Please check your internet connection and try again.');
       } else if (err.message && err.message.includes('timeout')) {
         setError('Request timed out. Please check your internet connection and try again.');
+      } else if (err.message && err.message.includes('Failed to fetch')) {
+        setError('Unable to connect to authentication service. Please check your internet connection.');
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);
+      console.log('🔐 AuthModal: Request completed, loading set to false');
     }
   };
 
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setFullName('');
-    setConfirmPassword('');
-    setError(null);
-    setMessage(null);
-    setShowPassword(false);
-  };
-
   const switchMode = (newMode: 'signin' | 'signup' | 'reset') => {
+    if (loading) {
+      console.log('🔐 AuthModal: Cannot switch mode while loading');
+      return;
+    }
     setMode(newMode);
     resetForm();
   };
@@ -415,92 +455,104 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                 {!loading && mode === 'reset' && 'Send Reset Link'}
               </span>
             </button>
+
+            {/* Cancel Button when loading */}
+            {loading && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(false);
+                  setError('Request cancelled by user');
+                }}
+                className="w-full mt-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+            )}
           </form>
 
           {/* Mode Switching */}
-          <div className="mt-6 space-y-4">
-            {mode === 'signin' && (
-              <div className="space-y-3">
-                <div className="text-center">
+          {!loading && (
+            <div className="mt-6 space-y-4">
+              {mode === 'signin' && (
+                <div className="space-y-3">
+                  <div className="text-center">
+                    <button
+                      onClick={() => switchMode('reset')}
+                      className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm transition-colors"
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
+                  
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        Don't have an account?
+                      </span>
+                    </div>
+                  </div>
+                  
                   <button
-                    onClick={() => switchMode('reset')}
-                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm transition-colors"
-                    disabled={loading}
+                    onClick={() => switchMode('signup')}
+                    className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
                   >
-                    Forgot your password?
+                    Create a new account
                   </button>
                 </div>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                      Don't have an account?
-                    </span>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => switchMode('signup')}
-                  className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
-                  disabled={loading}
-                >
-                  Create a new account
-                </button>
-              </div>
-            )}
+              )}
 
-            {mode === 'signup' && (
-              <div className="space-y-3">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+              {mode === 'signup' && (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        Already have an account?
+                      </span>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                      Already have an account?
-                    </span>
-                  </div>
+                  
+                  <button
+                    onClick={() => switchMode('signin')}
+                    className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
+                  >
+                    Sign in to your account
+                  </button>
                 </div>
-                
-                <button
-                  onClick={() => switchMode('signin')}
-                  className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
-                  disabled={loading}
-                >
-                  Sign in to your account
-                </button>
-              </div>
-            )}
+              )}
 
-            {mode === 'reset' && (
-              <div className="space-y-3">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+              {mode === 'reset' && (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        Remember your password?
+                      </span>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                      Remember your password?
-                    </span>
-                  </div>
+                  
+                  <button
+                    onClick={() => switchMode('signin')}
+                    className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
+                  >
+                    Back to sign in
+                  </button>
                 </div>
-                
-                <button
-                  onClick={() => switchMode('signin')}
-                  className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 transition-colors"
-                  disabled={loading}
-                >
-                  Back to sign in
-                </button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Terms and Privacy (signup only) */}
-          {mode === 'signup' && (
+          {mode === 'signup' && !loading && (
             <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 By creating an account, you agree to our{' '}
