@@ -107,6 +107,17 @@ const clearStaleAuthTokens = () => {
   }
 };
 
+// Get the current domain for redirects
+const getCurrentDomain = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  // Fallback for SSR or when window is not available
+  return import.meta.env.MODE === 'development' 
+    ? 'http://localhost:3000' 
+    : 'https://smartcvmaker.net';
+};
+
 // Auth helpers with improved error handling
 export const auth = {
   signUp: async (email: string, password: string, fullName: string) => {
@@ -145,7 +156,7 @@ export const auth = {
           data: {
             full_name: fullName.trim(),
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${getCurrentDomain()}/auth/callback`,
         },
       });
       
@@ -308,7 +319,7 @@ export const auth = {
       }
       
       const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${getCurrentDomain()}/auth/reset-password`,
       });
       
       if (error) {
